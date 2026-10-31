@@ -97,13 +97,19 @@ Jarvis can only ask Ollama while that computer is on and awake.
 
 - **Windows:** Settings → System → Power → set **Sleep** to **Never** when plugged in. For a laptop, Control Panel → Power Options → **Choose what closing the lid does** → **Do nothing** when plugged in.
 - Ollama starts with Windows by default, so it's ready after a restart.
+- **Linux laptop (e.g. Ubuntu Server):** stop it from sleeping when the lid is closed. Run `sudo nano /etc/systemd/logind.conf`, set these lines (remove the `#` in front):
+  ```ini
+  HandleLidSwitch=ignore
+  HandleLidSwitchExternalPower=ignore
+  ```
+  Save, then run `sudo systemctl restart systemd-logind`. The Ollama service starts on boot by itself.
 
 ## 6. Turn it on in the Desk Thing
 
 On the Desk Thing, open **Settings** (gear, or Apps → Settings):
 
 - **Ollama address:** the computer's address, for example `192.168.1.60` (the port `11434` is added for you)
-- **Ollama model:** for example `qwen2.5:1.5b`, or leave blank to use the first model installed
+- **Ollama model:** the exact name shown by `ollama list` on that computer (for example `qwen2.5:1.5b` or `gemma3:4b`), or leave blank to use the first model installed
 
 Press **Cancel** (or **Connect**) to close Settings. That saves it.
 
