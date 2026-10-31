@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>TruckNav Voice</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1b1e22; overflow: hidden; }
+  #nav { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  #say {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 2;
+    background: rgba(20,22,26,.88); color: #fff; font: 600 15px system-ui, sans-serif;
+    padding: 10px 16px; border-radius: 999px; opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  #say.show { opacity: 1; }
+</style>
+</head>
+<body>
+<!-- TruckNav itself, from the same address, so this page can read its turn card -->
+<iframe id="nav" src="/" allow="fullscreen; autoplay"></iframe>
+<div id="say"></div>
+<script>
+(() => {
+  // ---------- settings (the Desk Thing can change these with postMessage) ----------
+  let voiceOn = true;
+  try { voiceOn = localStorage.getItem('nv_on') !== '0'; } catch {}
+  const HELPER = `http://${location.hostname}:26540/speak?text=`;   // Windows voice from the PC helper
+
+  // ---------- speaking ----------
+  let useHelper = !('speechSynthesis' in window);
+  const audio = new Audio();
+  function bubble(text) {
+    const b = document.getElementById('say');
+    b.textContent = '🔊 ' + text; b.classList.add('show');
+    clearTimeout(bubble.t); bubble.t = setTimeout(() => b.classList.remove('show'), 3500);
+  }
+  function speak(text, force) {
+    if (!voiceOn && !force) return;
+    bubble(text);
+    parent.postMessage({ navVoice: 'said', text }, '*');
+    if (!useHelper) {
+      try {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length) {
+          speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          const en = voices.find(v => /en[-_]US/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang));
+          if (en) u.voice = en;
+          u.rate = 1.0;
+          let started = false;
+          u.onstart = () => { started = true; };
+          speechSynthesis.speak(u);
+          // If the phone's speech engine stays silent, switch to the PC voice from now on
+          setTimeout(() => { if (!started && !speechSynthesis.speaking) { useHelper = true; playHelper(text); } }, 1200);
+          return;
+        }
+      } catch {}
+      useHelper = true;
+    }
+    playHelper(text);
+  }
+  function playHelper(text) {
+    audio.src = HELPER + encodeURIComponent(text) + '&r=' + Date.now();
+    audio.play().catch(() => parent.postMessage({ navVoice: 'blocked' }, '*'));
+  }
+  if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => {};
+
+  // ---------- reading TruckNav's turn card ----------
+  // The card shows two lines: "0.4 mi" and "Turn left" (or "Keep right", "2nd exit", "Arrived"...)
+  function readCard() {
+    let doc;
+    try { doc = document.getElementById('nav').contentDocument; } catch { return null; }
+    if (!doc) return null;
+    const info = doc.querySelector('.turn-info');
+    if (!info || !info.offsetParent) return null;           // hidden when not navigating
+    const ps = info.querySelectorAll('p');
+    if (ps.length < 2) return null;
+    const distText = ps[0].textContent.trim();
+    const text = ps[1].textContent.trim();
+    const m = distText.match(/([\d.,]+)\s*([a-zA-Z]+)/);
+    if (!m) return { text, dist: NaN, unit: '' };
+    return { text, dist: parseFloat(m[1].replace(',', '.')), unit: m[2].toLowerCase() };
+  }
+
+  const unitWord = (u, d) => {
+    if (u.startsWith('mi')) return d === 1 ? 'mile' : 'miles';
+    if (u === 'km') return d === 1 ? 'kilometer' : 'kilometers';
+    if (u === 'm') return 'meters';
+    if (u.startsWith('ft')) return 'feet';
+    return u;
+  };
+  const nearLimit = (u) => u.startsWith('mi') ? 0.2 : u === 'km' ? 0.3 : u === 'm' ? 300 : u.startsWith('ft') ? 1000 : 0.2;
+  const isFollow = (t) => /follow|head on route/i.test(t);
+  const sentence = (t) => t.charAt(0).toLowerCase() + t.slice(1);
+
+  let cur = null, saidFar = false, saidNear = false, saidArrive = false, lastDist = Infinity, navigating = false;
+  function tick() {
+    const c = readCard();
+    if (!c) {
+      if (navigating) { navigating = false; cur = null; saidArrive = false; }
+      return;
+    }
+    navigating = true;
+    // a new turn: the instruction changed, or the distance jumped up
+    if (c.text !== cur || (isFinite(c.dist) && c.dist > lastDist + 0.3)) {
+      cur = c.text; saidFar = false; saidNear = false;
+    }
+    lastDist = isFinite(c.dist) ? c.dist : lastDist;
+    if (/arrived/i.test(c.text)) {
+      if (!saidArrive) { saidArrive = true; speak('You have arrived'); }
+      return;
+    }
+    if (isFollow(c.text)) return;
+    const near = isFinite(c.dist) && c.dist <= nearLimit(c.unit);
+    if (!saidFar && !near && isFinite(c.dist)) {
+      saidFar = true;
+      speak(`In ${c.dist} ${unitWord(c.unit, c.dist)}, ${sentence(c.text)}`);
+    }
+    if (!saidNear && near) {
+      saidNear = true; saidFar = true;
+      speak(c.text);
+    }
+  }
+  setInterval(tick, 500);
+
+  // ---------- setting a TruckNav destination by city name ----------
+  // TruckNav routes to the "last destination" saved in its settings when it starts,
+  // so we save the city there and restart TruckNav's map.
+  const SETTINGS_KEY = 'truck-nav-settings';
+  let citiesCache = null;
+  const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const stateName = (tok) => norm(String(tok || '').replace(/_/g, ' '));
+
+  async function loadCities() {
+    if (citiesCache) return citiesCache;
+    let folder = 'ats';
+    try {
+      const st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      const mod = st.profiles && st.profiles.ats && st.profiles.ats.activeMod;
+      if (mod && mod !== 'none') folder = mod;
+    } catch {}
+    const r = await fetch(`/maps/${folder}/map-data/cities.json`);
+    citiesCache = await r.json();
+    return citiesCache;
+  }
+
+  function findCity(cities, spoken) {
+    const q = norm(spoken);
+    let best = null;
+    for (const c of cities) {
+      const name = norm(c.name), withState = name + ' ' + stateName(c.countryToken);
+      let score = 0;
+      if (q === withState) score = 3;
+      else if (q === name) score = 2;
+      else if (q.startsWith(name + ' ') || withState.startsWith(q)) score = 1;
+      if (score && (!best || score > best.score || (score === best.score && (c.population || 0) > (best.c.population || 0)))) best = { c, score };
+    }
+    return best && best.c;
+  }
+
+  const toGeo = (x, y) => {   // same math TruckNav uses for ATS
+    const R = 300000.0;
+    const lon = (x / R) * (180 / Math.PI);
+    const lat = (2 * Math.atan(Math.exp(-y / R)) - Math.PI / 2) * (180 / Math.PI);
+    return [lon, lat];
+  };
+
+  function saveDestination(dest) {
+    const st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    st.selectedGame = st.selectedGame || 'ats';
+    st.profiles = st.profiles || {};
+    st.profiles.ats = st.profiles.ats || {};
+    st.profiles.ats.lastDestination = dest;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(st));
+  }
+
+  // After a restart TruckNav shows its start screen; press its "Start Navigation" button
+  // Unload TruckNav first (so it can't save its old settings over ours), then save, then start it again
+  function restartTruckNav(apply) {
+    const f = document.getElementById('nav');
+    f.onload = () => {
+      f.onload = null;
+      apply();
+      f.src = '/';
+      let tries = 0;
+      const t = setInterval(() => {
+        tries++;
+        try {
+          const btn = [...f.contentDocument.querySelectorAll('button')].find(b => /start navigation/i.test(b.textContent));
+          if (btn) { btn.click(); clearInterval(t); }
+        } catch {}
+        if (tries > 60) clearInterval(t);
+      }, 500);
+    };
+    f.src = 'about:blank';
+  }
+
+  async function setDestination(spoken, reqId) {
+    try {
+      const city = findCity(await loadCities(), spoken);
+      if (!city) { parent.postMessage({ navVoice: 'dest', ok: false, reqId, spoken }, '*'); return; }
+      const dest = toGeo(city.x, city.y);
+      restartTruckNav(() => saveDestination(dest));
+      const label = city.name + (city.countryToken ? ', ' + String(city.countryToken).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase()) : '');
+      parent.postMessage({ navVoice: 'dest', ok: true, reqId, name: label }, '*');
+    } catch (e) {
+      parent.postMessage({ navVoice: 'dest', ok: false, reqId, spoken, error: String(e) }, '*');
+    }
+  }
+
+  function clearDestination(reqId) {
+    try { restartTruckNav(() => saveDestination(null)); parent.postMessage({ navVoice: 'cleared', ok: true, reqId }, '*'); }
+    catch { parent.postMessage({ navVoice: 'cleared', ok: false, reqId }, '*'); }
+  }
+
+  // ---------- messages from the Desk Thing ----------
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.navVoiceCmd === 'set') {
+      voiceOn = !!d.on;
+      try { localStorage.setItem('nv_on', voiceOn ? '1' : '0'); } catch {}
+    }
+    if (d.navVoiceCmd === 'test') speak('Voice directions are on. In 0.4 miles, turn left', true);
+    if (d.navVoiceCmd === 'reload') document.getElementById('nav').contentWindow.location.reload();
+    if (d.navVoiceCmd === 'dest') setDestination(d.city, d.reqId);
+    if (d.navVoiceCmd === 'clearDest') clearDestination(d.reqId);
+  });
+  parent.postMessage({ navVoice: 'ready', on: voiceOn }, '*');
+})();
+</script>
+</body>
+</html>

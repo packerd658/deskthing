@@ -1,0 +1,1765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0b0d">
+<title>Desk Thing</title>
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --fg: #f4f1ec;
+    --dim: rgba(244, 241, 236, 0.58);
+    --faint: rgba(244, 241, 236, 0.14);
+    --accent: #ff5a3c;
+    --radius: 22px;
+    --surface: #18181c;        /* inputs, tiles */
+    --surface-2: #16161a;      /* modal card */
+    --border: #2c2c32;
+    --overlay: rgba(10, 10, 12, 0.94);
+    --toast: #232329;
+    --play-bg: var(--fg);
+    --play-fg: var(--bg);
+    --art-blur: 0.9;           /* how much album art shows in the backdrop */
+    --art-bright: 0.45;
+    --tint: transparent;       /* gradient laid over the backdrop */
+    --shade: rgba(0,0,0,0.55);
+    --clock-bg: #000;
+    --clock-fg: #e9e5df;
+    --knob: var(--fg);
+  }
+  /* ---------- Themes ---------- */
+  :root[data-theme="midnight"] {   /* pure black, easiest on an OLED screen */
+    --bg: #000; --fg: #e8e8ec; --dim: rgba(232,232,236,0.5); --faint: rgba(232,232,236,0.12);
+    --accent: #8ab4ff; --surface: #101014; --surface-2: #0c0c0f; --border: #24242a; --overlay: rgba(0,0,0,0.96);
+    --toast: #1a1a20; --art-blur: 0; --shade: transparent;
+  }
+  :root[data-theme="sunset"] {
+    --bg: #1a0b14; --fg: #fff3e8; --dim: rgba(255,243,232,0.62); --faint: rgba(255,243,232,0.16);
+    --accent: #ffb547; --surface: #2a1420; --surface-2: #23111b; --border: #4a2638; --overlay: rgba(26,11,20,0.95);
+    --toast: #3a1c2c; --art-blur: 0.35; --art-bright: 0.5; --shade: rgba(10,0,8,0.45);
+    --tint: linear-gradient(135deg, rgba(255,110,64,0.55) 0%, rgba(214,51,108,0.45) 45%, rgba(84,36,140,0.6) 100%);
+    --play-bg: #ffb547; --play-fg: #2a0f1c; --clock-fg: #ffd2a6;
+  }
+  :root[data-theme="forest"] {
+    --bg: #0c1410; --fg: #ecf3e6; --dim: rgba(236,243,230,0.6); --faint: rgba(236,243,230,0.14);
+    --accent: #9be36a; --surface: #15211a; --surface-2: #111c16; --border: #2a3d31; --overlay: rgba(12,20,16,0.95);
+    --toast: #1d2e24; --art-blur: 0.3; --art-bright: 0.4; --shade: rgba(0,6,2,0.5);
+    --tint: linear-gradient(160deg, rgba(46,94,62,0.6) 0%, rgba(16,40,28,0.7) 60%, rgba(70,90,40,0.5) 100%);
+    --play-bg: #d9efc6; --play-fg: #0f2016; --clock-fg: #cfe8bd;
+  }
+  :root[data-theme="ocean"] {
+    --bg: #06121c; --fg: #e6f4ff; --dim: rgba(230,244,255,0.6); --faint: rgba(230,244,255,0.14);
+    --accent: #4fd1e8; --surface: #0e1f2d; --surface-2: #0b1925; --border: #1f3a52; --overlay: rgba(6,18,28,0.95);
+    --toast: #13293b; --art-blur: 0.35; --art-bright: 0.45; --shade: rgba(0,4,10,0.5);
+    --tint: linear-gradient(180deg, rgba(14,70,120,0.55) 0%, rgba(6,30,60,0.65) 55%, rgba(12,110,130,0.45) 100%);
+    --play-bg: #4fd1e8; --play-fg: #04202a; --clock-fg: #bfe9f5;
+  }
+  :root[data-theme="neon"] {
+    --bg: #0b0418; --fg: #f6eaff; --dim: rgba(246,234,255,0.6); --faint: rgba(246,234,255,0.14);
+    --accent: #ff3df2; --surface: #170a2c; --surface-2: #130824; --border: #3a1d66; --overlay: rgba(11,4,24,0.95);
+    --toast: #22103f; --art-blur: 0.35; --art-bright: 0.5; --shade: rgba(4,0,12,0.5);
+    --tint: linear-gradient(135deg, rgba(255,61,242,0.35) 0%, rgba(60,20,140,0.55) 50%, rgba(0,229,255,0.35) 100%);
+    --play-bg: #00e5ff; --play-fg: #10052a; --knob: #00e5ff; --clock-fg: #ff9cf7;
+  }
+  :root[data-theme="amber"] {     /* retro terminal */
+    --bg: #0d0900; --fg: #ffb000; --dim: rgba(255,176,0,0.6); --faint: rgba(255,176,0,0.16);
+    --accent: #ffb000; --surface: #1a1200; --surface-2: #140e00; --border: #4a3300; --overlay: rgba(13,9,0,0.96);
+    --toast: #241900; --art-blur: 0; --shade: transparent; --radius: 6px;
+    --play-bg: #ffb000; --play-fg: #0d0900; --clock-bg: #0d0900; --clock-fg: #ffb000;
+  }
+  :root[data-theme="amber"] body { font-family: "JetBrains Mono", "Roboto Mono", "Courier New", monospace; }
+  :root[data-theme="amber"] #art { filter: sepia(1) saturate(2.2) hue-rotate(-12deg) contrast(1.1); }
+  :root[data-theme="paper"] {     /* light theme for a bright room */
+    --bg: #f2eee6; --fg: #1d1b18; --dim: rgba(29,27,24,0.6); --faint: rgba(29,27,24,0.13);
+    --accent: #d2462a; --surface: #e6e0d4; --surface-2: #faf7f1; --border: #cfc7b8; --overlay: rgba(242,238,230,0.96);
+    --toast: #1d1b18; --art-blur: 0.35; --art-bright: 1.15; --shade: rgba(242,238,230,0.55);
+    --play-bg: #1d1b18; --play-fg: #f2eee6; --clock-bg: #f2eee6; --clock-fg: #1d1b18;
+  }
+  :root[data-theme="paper"] #toast { color: #f2eee6; }
+  :root[data-theme="paper"] #art-wrap { box-shadow: 0 20px 50px rgba(60,40,20,0.25); }
+
+  /* Theme picker */
+  #themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 10px; }
+  .swatch { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; color: var(--dim); }
+  .swatch i { width: 100%; aspect-ratio: 1.6; border-radius: 12px; border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(128,128,128,0.35); position: relative; overflow: hidden; }
+  .swatch i::after { content: ""; position: absolute; right: 10%; bottom: 16%; width: 26%; aspect-ratio: 1; border-radius: 50%; background: var(--sw-play); }
+  .swatch.sel i { border-color: var(--fg); }
+  .swatch.sel { color: var(--fg); font-weight: 600; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font-family: "Google Sans", "Product Sans", Roboto, system-ui, sans-serif;
+    overflow: hidden; user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  svg { display: block; }
+
+  /* Blurred album art backdrop */
+  #backdrop {
+    position: fixed; inset: -10%; background-size: cover; background-position: center;
+    filter: blur(60px) saturate(1.4) brightness(var(--art-bright)); transform: scale(1.1);
+    transition: background-image 0.8s ease, opacity 0.8s ease; opacity: var(--art-blur);
+  }
+  #shade { position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 40%, transparent 0%, var(--shade) 100%), var(--tint); transition: background 0.6s; }
+
+  /* Player layout: landscape first */
+  #player {
+    position: relative; height: 100%; display: grid;
+    grid-template-columns: auto 1fr; gap: 5vh 5vw; align-items: center;
+    padding: max(6vh, env(safe-area-inset-top)) max(5vw, env(safe-area-inset-right)) max(6vh, env(safe-area-inset-bottom)) max(5vw, env(safe-area-inset-left));
+  }
+  #art-wrap {
+    width: min(78vh, 44vw); aspect-ratio: 1; border-radius: var(--radius); overflow: hidden;
+    background: var(--surface); box-shadow: 0 30px 80px rgba(0,0,0,0.6); position: relative;
+  }
+  #art { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.4s ease; }
+  #art-wrap.paused #art { opacity: 0.55; }
+  #paused-badge {
+    position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #art-wrap.paused #paused-badge { opacity: 1; }
+
+  #info { min-width: 0; display: flex; flex-direction: column; gap: 3.2vh; }
+  #title {
+    font-size: clamp(26px, 6.4vh, 64px); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  #artist { font-size: clamp(16px, 3.6vh, 34px); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -1.6vh; }
+
+  /* Progress */
+  #progress { display: flex; flex-direction: column; gap: 1vh; }
+  #bar { position: relative; height: 34px; display: flex; align-items: center; touch-action: none; }
+  #bar-track { position: absolute; left: 0; right: 0; height: 6px; border-radius: 3px; background: var(--faint); overflow: hidden; }
+  #bar-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 3px; }
+  #bar-knob { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--knob); left: 0%; transform: translateX(-50%); box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  #times { display: flex; justify-content: space-between; font-size: clamp(12px, 2.3vh, 20px); color: var(--dim); font-variant-numeric: tabular-nums; }
+
+  /* Controls */
+  #controls { display: flex; align-items: center; justify-content: space-between; gap: 2vw; }
+  .ctl { flex: none; aspect-ratio: 1; width: 11vh; height: 11vh; min-width: 56px; min-height: 56px; border-radius: 50%; display: grid; place-items: center; color: var(--fg); transition: transform 0.12s, background 0.2s, color 0.2s; }
+  .ctl:active { transform: scale(0.9); background: var(--faint); }
+  .ctl svg { width: 48%; height: 48%; }
+  .ctl.small svg { width: 40%; height: 40%; }
+  .ctl.on { color: var(--accent); }
+  #play { width: 17vh; height: 17vh; min-width: 80px; min-height: 80px; background: var(--play-bg); color: var(--play-fg); }
+  #play:active { filter: brightness(0.85); background: var(--play-bg); }
+  #play svg { width: 44%; height: 44%; }
+  #repeat-one { font-size: 10px; font-weight: 800; position: absolute; }
+
+  /* Bottom row: volume + up next */
+  #extras { display: flex; align-items: center; gap: 3vw; }
+  #vol { flex: 1; display: flex; align-items: center; gap: 14px; color: var(--dim); }
+  #vol svg { width: 26px; height: 26px; flex: none; }
+  #vol-bar { position: relative; flex: 1; height: 34px; display: flex; align-items: center; touch-action: none; }
+  #vol-track { position: absolute; left: 0; right: 0; height: 6px; border-radius: 3px; background: var(--faint); overflow: hidden; }
+  #vol-fill { height: 100%; width: 50%; background: var(--fg); }
+  #next-up { flex: 1; min-width: 0; font-size: clamp(12px, 2.3vh, 20px); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+  #next-up b { color: var(--fg); font-weight: 600; }
+
+  /* ---------- CarPlay-style shell ---------- */
+  :root { --dock-w: 100px; --gap: 12px; --card: rgba(255,255,255,0.075); --card-border: rgba(255,255,255,0.06); }
+  :root[data-theme="paper"] { --card: rgba(255,255,255,0.7); --card-border: rgba(0,0,0,0.08); }
+
+  #dock {
+    position: fixed; left: 0; top: 0; bottom: 0; width: var(--dock-w); z-index: 3;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: max(12px, env(safe-area-inset-top)) 0 max(14px, env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(20px); border-right: 1px solid var(--card-border);
+  }
+  :root[data-theme="paper"] #dock { background: rgba(255,255,255,0.55); }
+  #dock-time { text-align: center; line-height: 1.05; cursor: pointer; }
+  #clock { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  #dock-sub { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; color: var(--dim); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+  #dot { width: 8px; height: 8px; border-radius: 50%; background: #e0a32b; }
+  #dot.ok { background: #3ccf7a; }
+  #dot.bad { background: #e5484d; }
+  .dock-apps { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 0; }
+  .app {
+    position: relative; width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; color: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25); transition: transform 0.12s;
+  }
+  .app:active { transform: scale(0.9); }
+  .app svg { width: 30px; height: 30px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25)); }
+  .app::after { content: ""; position: absolute; left: -20px; top: 50%; width: 5px; height: 0; border-radius: 3px; background: var(--fg); transform: translateY(-50%); transition: height 0.2s; }
+  .app.active::after { height: 22px; }
+  #btn-dash { background: linear-gradient(160deg, #6b7280, #374151); }
+  #btn-map { background: linear-gradient(160deg, #5ac8fa, #1d6fe0); }
+  #btn-music { background: linear-gradient(160deg, #ff6b81, #f0263f); }
+  #btn-apps { background: linear-gradient(160deg, #4b5563, #1f2937); }
+
+  /* Apps screen */
+  #apps { position: fixed; left: var(--dock-w); top: 0; right: 0; bottom: 0; z-index: 4; display: none; flex-direction: column; justify-content: center;
+    padding: 18px 28px; background: rgba(0,0,0,0.55); backdrop-filter: blur(28px); }
+  :root[data-theme="paper"] #apps { background: rgba(255,255,255,0.65); }
+  #apps.show { display: flex; }
+  #apps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; max-width: 640px; width: 100%; margin: 0 auto; }
+  .tile { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--fg); font-size: 14px; font-weight: 600; }
+  .tile i { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center; color: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25); }
+  .tile i svg { width: 38px; height: 38px; }
+  .tile:active i { transform: scale(0.9); }
+  .tile span { white-space: nowrap; }
+  #btn-web { background: linear-gradient(160deg, #ffffff, #d9e6f5); color: #1a73e8; }
+  #btn-web svg { filter: none; }
+
+  /* Browser app */
+  #web-card { display: none; flex-direction: column; background: var(--surface-2); }
+  #stage[data-pane="web"] #map-card { display: none; }
+  #stage[data-pane="web"]:not([data-view="player"]) #web-card { display: flex; }
+  #stage[data-view="map"] #web-card { grid-column: 1 / -1; }
+  #map-toweb { right: 118px; bottom: 10px; }
+  #map-voice { right: 172px; bottom: 10px; }
+  #map-voice.off { opacity: .55; }
+  #stage[data-view="dash"] #web-star, #stage[data-view="dash"] #web-out, #stage[data-view="dash"] #web-reload { display: none; }
+  #web-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border); }
+  .wbtn { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--fg); background: var(--faint); }
+  .wbtn:active { transform: scale(0.92); }
+  .wbtn:disabled { opacity: 0.35; }
+  #web-url { flex: 1; min-width: 0; height: 44px; font-size: 16px; padding: 0 14px; border-radius: 12px; }
+  #web-marks { flex: none; display: flex; gap: 8px; padding: 8px; overflow-x: auto; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+  #web-marks::-webkit-scrollbar { display: none; }
+  .mark { flex: none; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 6px; border-radius: 18px; background: var(--faint); font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .mark:active { transform: scale(0.95); }
+  .mark b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; color: #fff; background: var(--accent); }
+  .mark.deleting { outline: 2px solid #e5484d; }
+  #web-view { position: relative; flex: 1; min-height: 0; background: #fff; }
+  #web-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+  #web-hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--dim); background: var(--surface-2); font-size: 16px; line-height: 1.5; }
+
+  #dock-foot { display: flex; gap: 6px; align-items: center; }
+  #gear { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: var(--dim); }
+  #mic { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(160deg, #a78bfa, #6d28d9); box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+  #mic:active { transform: scale(0.9); }
+  #mic { position: relative; }
+  #mic.wake::after { content: ""; position: absolute; right: 1px; top: 1px; width: 10px; height: 10px; border-radius: 50%; background: #3ccf7a; border: 2px solid #1b1630; }
+  #mic.busy { animation: micpulse 1.1s ease-in-out infinite; }
+  @keyframes micpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(167,139,250,.7); } 50% { box-shadow: 0 0 0 10px rgba(167,139,250,0); } }
+
+  /* Assistant panel */
+  #asst { position: fixed; left: calc(var(--dock-w) + 14px); right: 14px; bottom: 14px; z-index: 30; display: none; gap: 14px; align-items: center;
+    padding: 14px 16px; border-radius: 22px; background: rgba(20,18,32,.92); backdrop-filter: blur(24px); border: 1px solid rgba(167,139,250,.35); box-shadow: 0 10px 40px rgba(0,0,0,.5); color: #fff; }
+  #asst.show { display: flex; }
+  #asst-orb { flex: none; width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c4b5fd, #7c3aed 60%, #4c1d95); }
+  #asst.listening #asst-orb { animation: orb 1s ease-in-out infinite; }
+  #asst.thinking #asst-orb { animation: orb 0.5s linear infinite; opacity: .8; }
+  @keyframes orb { 0%,100% { transform: scale(.88); } 50% { transform: scale(1.08); } }
+  #asst-text { flex: 1; min-width: 0; }
+  #asst-heard { font-size: 13px; color: #c4b5fd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 16px; }
+  #asst-reply { font-size: 20px; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #asst-type { display: flex; gap: 8px; margin-top: 8px; }
+  #asst-type input { flex: 1; min-width: 0; height: 40px; font-size: 16px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); color: #fff; }
+  #asst-type button, #asst-close, #asst-again { flex: none; height: 40px; padding: 0 14px; border-radius: 12px; background: rgba(255,255,255,.12); color: #fff; font-weight: 600; font-size: 14px; }
+  #asst-btns { display: flex; flex-direction: column; gap: 8px; }
+  #gear:active { background: var(--faint); }
+
+  #stage {
+    position: fixed; top: 0; bottom: 0; right: 0; left: var(--dock-w);
+    padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gap), env(safe-area-inset-right)) max(var(--gap), env(safe-area-inset-bottom)) var(--gap);
+    display: grid; grid-template-columns: 1.75fr 1fr; grid-template-rows: 100%; gap: var(--gap);
+  }
+  .card { position: relative; border-radius: 22px; background: var(--card); border: 1px solid var(--card-border); overflow: hidden; min-width: 0; min-height: 0; backdrop-filter: blur(24px); }
+
+  /* views */
+  #stage[data-view="dash"] #player { display: none; }
+  #stage[data-view="map"] #side, #stage[data-view="map"] #player { display: none; }
+  #stage[data-view="map"] #map-card { grid-column: 1 / -1; }
+  #stage[data-view="player"] #map-card, #stage[data-view="player"] #side { display: none; }
+  #stage[data-view="player"] #player { grid-column: 1 / -1; }
+  #stage:not([data-view="player"]) ~ #backdrop-dim { opacity: 1; }
+
+  /* map card */
+  #map-card { background: #1b1e22; }
+  #map-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #1b1e22; }
+  #map-empty { position: absolute; inset: 0; display: none; place-items: center; text-align: center; color: #cfd3d8; padding: 24px; font-size: 17px; line-height: 1.5; background: #1b1e22; }
+  #map-empty .btn { margin-top: 14px; display: inline-block; }
+  .map-btn {
+    position: absolute; z-index: 2; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+    background: rgba(20,22,26,0.78); color: #fff; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .map-btn:active { transform: scale(0.92); }
+  #map-expand { right: 10px; bottom: 10px; }
+  #map-reload { right: 64px; bottom: 10px; }
+
+  /* floating now-playing pill on the full map */
+  #mini {
+    position: absolute; left: 10px; bottom: 10px; z-index: 2; display: none; align-items: center; gap: 10px;
+    width: min(400px, 55%); height: 64px; padding: 0 8px; border-radius: 18px; overflow: hidden;
+    background: rgba(20,22,26,0.85); color: #fff; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08);
+  }
+  #stage[data-view="map"] #mini { display: flex; }
+  #mini-art { width: 46px; height: 46px; border-radius: 10px; object-fit: cover; background: #2a2d33; flex: none; }
+  #mini-text { flex: 1; min-width: 0; }
+  #mini-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #mini-artist { font-size: 13px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #mini .ctl { width: 44px; height: 44px; min-width: 0; min-height: 0; color: #fff; }
+  #mini-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.12); }
+  #mini-prog-fill { height: 100%; width: 0; background: var(--accent); }
+
+  /* side column */
+  #side { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--gap); min-height: 0; }
+  #np-card { display: flex; flex-direction: column; justify-content: space-between; padding: 12px 14px; gap: 4px; }
+  #np-top { display: flex; gap: 14px; align-items: center; min-width: 0; cursor: pointer; }
+  #np-art { width: 28%; max-width: 92px; aspect-ratio: 1; border-radius: 12px; object-fit: cover; background: var(--surface); flex: none; box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+  #np-text { min-width: 0; flex: 1; }
+  #np-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  #np-title { font-size: 17px; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #np-artist { font-size: 14px; color: var(--dim); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #np-prog { height: 4px; border-radius: 2px; background: var(--faint); overflow: hidden; }
+  #np-prog-fill { height: 100%; width: 0; background: var(--fg); border-radius: 2px; }
+  #np-times { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  #np-vol { display: flex; align-items: center; gap: 10px; color: var(--dim); }
+  #np-vol svg { width: 20px; height: 20px; flex: none; }
+  #np-vol-bar { position: relative; flex: 1; height: 26px; display: flex; align-items: center; touch-action: none; cursor: pointer; }
+  #np-vol-track { position: absolute; left: 0; right: 0; height: 6px; border-radius: 3px; background: var(--faint); overflow: hidden; }
+  #np-vol-fill { height: 100%; width: 50%; background: var(--fg); }
+  #np-vol-knob, #vol-knob { position: absolute; left: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--knob); transform: translateX(-50%); box-shadow: 0 1px 6px rgba(0,0,0,0.4); }
+  .mute-btn { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin: -6px -4px; border-radius: 50%; color: inherit; }
+  .mute-btn:active { background: var(--faint); transform: scale(0.9); }
+  .mute-btn.muted { color: #e5484d; }
+  #np-vol .mute-btn svg { width: 20px; height: 20px; }
+  #vol .mute-btn { width: 44px; height: 44px; }
+  #vol .mute-btn svg { width: 26px; height: 26px; }
+  #map-mic { right: 226px; bottom: 10px; }
+  #map-mic.muted { background: #e5484d; color: #fff; }
+  #mic.muted { background: linear-gradient(160deg, #f87171, #b91c1c); }
+  #np-vol-num { width: 30px; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
+  #np-ctl { display: flex; justify-content: space-around; align-items: center; }
+  #np-ctl .ctl { width: 46px; height: 46px; min-width: 0; min-height: 0; }
+  #np-play { width: 54px !important; height: 54px !important; background: var(--play-bg); color: var(--play-fg); }
+
+  #next-card { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  .card-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  #nc-next { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -4px; }
+  #nc-next b { font-weight: 600; }
+  #chips { display: flex; gap: 8px; min-width: 0; overflow: hidden; }
+  .chip { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 12px; background: var(--faint); text-align: left; }
+  .chip:active { transform: scale(0.96); }
+  .chip img, .chip i { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex: none; background: var(--surface); }
+  .chip span { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .outline { display: none; align-items: center; gap: 6px; font-size: 13px; color: var(--dim); min-width: 0; margin-top: 6px; }
+  .outline.show { display: flex; }
+  .outline svg { width: 16px; height: 16px; flex: none; color: var(--accent); }
+  .outline span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pv-out { margin-top: 0; font-size: clamp(12px, 2.3vh, 18px); flex: none; max-width: 32%; }
+  #pv-out svg { width: 20px; height: 20px; }
+  #chips-empty { font-size: 13px; color: var(--dim); line-height: 1.4; }
+
+  /* the existing big player now lives inside the stage */
+  #player { padding: 2vh 3vw !important; height: 100%; min-height: 0; }
+  #art-wrap { width: min(70vh, 36vw) !important; }
+
+  @media (orientation: portrait) {
+    :root { --dock-w: 0px; }
+    #dock { top: auto; right: 0; width: auto; height: 84px; flex-direction: row; padding: 0 16px env(safe-area-inset-bottom); border-right: 0; border-top: 1px solid var(--card-border); }
+    .dock-apps { flex-direction: row; justify-content: center; }
+    .app::after { display: none; }
+    #stage { bottom: 84px; grid-template-columns: 1fr; grid-template-rows: 1.3fr 1fr; }
+    #stage[data-view="map"] #map-card { grid-row: 1 / -1; }
+  }
+
+  /* Portrait fallback */
+  @media (orientation: portrait) {
+    #player { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-content: center; justify-items: center; }
+    #art-wrap { width: min(82vw, 46vh); }
+    #info { width: 100%; }
+    #title { font-size: clamp(24px, 4vh, 44px); }
+    #artist { font-size: clamp(15px, 2.4vh, 26px); }
+    .ctl { width: 8vh; height: 8vh; }
+    #play { width: 11vh; height: 11vh; }
+    #extras { flex-direction: column; align-items: stretch; }
+    #next-up { text-align: center; }
+  }
+
+  /* Setup / overlay */
+  #setup {
+    position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(10px);
+    display: none; padding: 24px; z-index: 10; overflow-y: auto;
+  }
+  #setup.show { display: flex; }
+  #card { width: min(720px, 100%); margin: auto; display: flex; flex-direction: column; gap: 18px; }
+  #card h4 { margin: 10px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); font-weight: 600; }
+  #card h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+  #card p { margin: 0; color: var(--dim); line-height: 1.5; font-size: 16px; }
+  .row { display: flex; gap: 12px; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--dim); flex: 1; }
+  input {
+    font: inherit; font-size: 20px; color: var(--fg); background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; outline: none; width: 100%;
+  }
+  input:focus { border-color: var(--accent); }
+  .btn { background: var(--play-bg); color: var(--play-fg); font-weight: 700; font-size: 18px; padding: 16px; border-radius: 14px; }
+  .btn.ghost { background: transparent; color: var(--dim); border: 1px solid var(--border); font-weight: 500; }
+  #setup-msg { min-height: 1.5em; font-size: 15px; }
+  #setup-msg.err { color: #ff7b7b; }
+
+  #idle { position: absolute; inset: 0; display: none; place-items: center; text-align: center; color: var(--dim); font-size: 22px; padding: 24px; }
+  body.empty #idle { display: grid; }
+  body.empty #player > * { visibility: hidden; }
+  body.empty #player > #idle { visibility: visible; }
+
+  /* Status bar extra buttons */
+  .sbtn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--dim); }
+  .sbtn:active { background: var(--faint); }
+  #clock { cursor: pointer; padding: 6px 4px; }
+
+  /* Playlist sheet */
+  #sheet {
+    position: fixed; inset: 0; z-index: 8; display: none; flex-direction: column;
+    background: var(--overlay); backdrop-filter: blur(14px);
+    padding: max(20px, env(safe-area-inset-top)) max(4vw, env(safe-area-inset-right)) 20px max(4vw, env(safe-area-inset-left));
+  }
+  #sheet.show { display: flex; }
+  #sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  #sheet-head h2 { margin: 0; font-size: 28px; letter-spacing: -0.01em; }
+  #sheet-hint { color: var(--dim); font-size: 14px; margin-top: 4px; }
+  #grid {
+    flex: 1; overflow-y: auto; display: grid; gap: 18px; align-content: start;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  .tile { display: flex; flex-direction: column; gap: 10px; text-align: left; transition: transform 0.12s; }
+  .tile:active { transform: scale(0.95); }
+  .tile-art { aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
+  .tile-art img { width: 100%; height: 100%; object-fit: cover; }
+  .tile-name { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile-sub { font-size: 13px; color: var(--dim); margin-top: -6px; }
+  .tile.add .tile-art { border: 2px dashed var(--border); background: transparent; color: var(--dim); }
+  .tile.deleting .tile-art { outline: 3px solid #e5484d; }
+
+  /* Small modal (name a preset / confirm) */
+  #modal { position: fixed; inset: 0; z-index: 11; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); padding: 24px; }
+  #modal.show { display: flex; }
+  #modal-card { width: min(480px, 100%); background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  #modal-card h3 { margin: 0; font-size: 22px; }
+  #modal-card p { margin: 0; color: var(--dim); font-size: 15px; line-height: 1.45; }
+  .btn.danger { background: #e5484d; color: #fff; }
+
+  /* Toast */
+  #toast {
+    position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); transform: translate(-50%, 20px);
+    background: var(--toast); color: var(--fg); padding: 12px 20px; border-radius: 999px; font-size: 15px;
+    opacity: 0; transition: opacity 0.25s, transform 0.25s; z-index: 12; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* Clock screen */
+  #clockscreen {
+    position: fixed; inset: 0; z-index: 9; background: var(--clock-bg); display: none;
+    align-items: center; justify-content: center; cursor: pointer;
+  }
+  #clockscreen.show { display: flex; }
+  #cs-inner { text-align: center; transition: transform 2s ease; }
+  #cs-time { font-size: clamp(80px, 30vh, 300px); font-weight: 300; letter-spacing: -0.04em; line-height: 1; color: var(--clock-fg); font-variant-numeric: tabular-nums; }
+  #cs-ampm { font-size: 0.22em; font-weight: 500; letter-spacing: 0; color: var(--clock-fg); opacity: 0.5; margin-left: 0.2em; vertical-align: 0.2em; }
+  #cs-date { font-size: clamp(18px, 5vh, 44px); color: var(--clock-fg); opacity: 0.55; margin-top: 2.5vh; }
+  #cs-song { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 6vh; color: var(--clock-fg); opacity: 0.45; font-size: clamp(14px, 3vh, 24px); max-width: 80vw; }
+  #cs-song img { width: 6vh; height: 6vh; min-width: 34px; min-height: 34px; border-radius: 8px; object-fit: cover; opacity: 0.7; }
+  #cs-song span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body class="empty">
+<div id="backdrop"></div>
+<div id="shade"></div>
+
+<nav id="dock">
+  <div id="dock-time" title="Clock screen">
+    <div id="clock"></div>
+    <div id="dock-sub"><span id="dot" title="Music connection"></span><span>ATS</span></div>
+  </div>
+  <div class="dock-apps">
+    <button class="app" id="btn-dash" aria-label="Dashboard">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v10H3zm10 0h8v6h-8zM3 15h8v6H3zm10-4h8v10h-8z"/></svg>
+    </button>
+    <button class="app" id="btn-map" aria-label="ATS map">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.7 2.3a1 1 0 0 0-1.1-.2L3.1 9.6a1 1 0 0 0 .1 1.9l7.1 2.1 2.1 7.1a1 1 0 0 0 1.9.1l7.5-17.5a1 1 0 0 0-.1-1z"/></svg>
+    </button>
+    <button class="app" id="btn-music" aria-label="Now playing">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 3v12.5a3.5 3.5 0 1 1-2-3.16V7.2L10 9v8.5a3.5 3.5 0 1 1-2-3.16V5.5L20 3z"/></svg>
+    </button>
+    <button class="app" id="btn-web" aria-label="Browser">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 1.8a8.2 8.2 0 1 1 0 16.4 8.2 8.2 0 0 1 0-16.4zm4.6 3.6-6.2 3-3 6.2 6.2-3 3-6.2zM12 10.9a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z"/></svg>
+    </button>
+    <button class="app" id="btn-apps" aria-label="Apps">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg>
+    </button>
+  </div>
+  <div id="dock-foot">
+  <button id="mic" aria-label="Assistant"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
+  <button id="gear" aria-label="Settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94 7.07 7.07 0 0 0-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.48.48 0 0 0-.59.22L2.71 8.47a.48.48 0 0 0 .12.61l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg></button>
+  </div>
+</nav>
+
+<div id="apps" role="dialog" aria-label="Apps"><div id="apps-grid">
+  <button class="tile" data-app="dash"><i style="background:linear-gradient(160deg,#6b7280,#374151)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v10H3zm10 0h8v6h-8zM3 15h8v6H3zm10-4h8v10h-8z"/></svg></i><span>Dashboard</span></button>
+  <button class="tile" data-app="map"><i style="background:linear-gradient(160deg,#5ac8fa,#1d6fe0)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.7 2.3a1 1 0 0 0-1.1-.2L3.1 9.6a1 1 0 0 0 .1 1.9l7.1 2.1 2.1 7.1a1 1 0 0 0 1.9.1l7.5-17.5a1 1 0 0 0-.1-1z"/></svg></i><span>ATS Map</span></button>
+  <button class="tile" data-app="music"><i style="background:linear-gradient(160deg,#ff6b81,#f0263f)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 3v12.5a3.5 3.5 0 1 1-2-3.16V7.2L10 9v8.5a3.5 3.5 0 1 1-2-3.16V5.5L20 3z"/></svg></i><span>Music</span></button>
+  <button class="tile" data-app="lib"><i style="background:linear-gradient(160deg,#ffb340,#ff8a00)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18A3 3 0 0 0 16 14a3 3 0 1 0 3 3V8h3V6h-5z"/></svg></i><span>Playlists</span></button>
+  <button class="tile" data-app="web"><i style="background:linear-gradient(160deg,#3b82f6,#1e40af)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 1.8a8.2 8.2 0 1 1 0 16.4 8.2 8.2 0 0 1 0-16.4zm4.6 3.6-6.2 3-3 6.2 6.2-3 3-6.2zM12 10.9a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z"/></svg></i><span>Browser</span></button>
+  <button class="tile" data-app="jarvis"><i style="background:linear-gradient(160deg,#a78bfa,#6d28d9)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></i><span>Jarvis</span></button>
+  <button class="tile" data-app="clock"><i style="background:linear-gradient(160deg,#34d399,#047857)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/></svg></i><span>Clock</span></button>
+  <button class="tile" data-app="settings"><i style="background:linear-gradient(160deg,#9ca3af,#4b5563)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .06-.94 7.07 7.07 0 0 0-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.48.48 0 0 0-.59.22L2.71 8.47a.48.48 0 0 0 .12.61l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg></i><span>Settings</span></button>
+</div></div>
+
+<div id="asst" role="dialog" aria-label="Assistant">
+  <div id="asst-orb"></div>
+  <div id="asst-text">
+    <div id="asst-heard"></div>
+    <div id="asst-reply">Listening…</div>
+    <form id="asst-type" autocomplete="off"><input id="asst-input" placeholder="Say &quot;Hey Jarvis&quot;, or type: what's the weather" enterkeyhint="go"><button type="submit">Go</button></form>
+  </div>
+  <div id="asst-btns"><button id="asst-again">Talk</button><button id="asst-close">Close</button></div>
+</div>
+
+<div id="stage" data-view="dash">
+  <section id="map-card" class="card">
+    <iframe id="map-frame" title="ATS map" allow="fullscreen; screen-wake-lock; geolocation" referrerpolicy="no-referrer"></iframe>
+    <div id="map-empty"><div><span id="map-empty-text">The map couldn't load.<br>Check the Map address in Settings and that TruckNav is running.</span><br><button class="btn" id="map-open-full">Open map</button></div></div>
+    <button class="map-btn" id="map-reload" aria-label="Reload map">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+    </button>
+    <button class="map-btn" id="map-mic" aria-label="Mute the microphone">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path id="map-mic-path" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg>
+    </button>
+    <button class="map-btn" id="map-voice" aria-label="Voice directions on or off">
+      <svg id="ico-voice-on" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      <svg id="ico-voice-off" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>
+    </button>
+    <button class="map-btn" id="map-toweb" aria-label="Switch to browser">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 6h-2.95a15.6 15.6 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14a8.2 8.2 0 0 1 0-4h3.38a16.5 16.5 0 0 0 0 4H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.99 7.99 0 0 1 5.07 16zm2.95-8H5.07a7.99 7.99 0 0 1 4.33-3.56A15.6 15.6 0 0 0 8.02 8zM12 19.96A14.1 14.1 0 0 1 10.09 16h3.82A14.1 14.1 0 0 1 12 19.96zM14.34 14H9.66a14.7 14.7 0 0 1 0-4h4.68a14.7 14.7 0 0 1 0 4zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14a16.5 16.5 0 0 0 0-4h3.38a8.2 8.2 0 0 1 0 4h-3.38z"/></svg>
+    </button>
+    <button class="map-btn" id="map-expand" aria-label="Full screen map">
+      <svg id="ico-expand" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+      <svg id="ico-shrink" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+    </button>
+    <div id="mini">
+      <div id="mini-prog"><div id="mini-prog-fill"></div></div>
+    <img id="mini-art" alt="" referrerpolicy="no-referrer">
+    <div id="mini-text"><div id="mini-title">Nothing playing</div><div id="mini-artist"></div></div>
+    <button class="ctl" id="mini-prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+    <button class="ctl" id="mini-play" aria-label="Play or pause">
+      <svg id="mini-ico-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="mini-ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    <button class="ctl" id="mini-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+  </div>
+  </section>
+
+  <section id="web-card" class="card">
+    <div id="web-bar">
+      <button class="wbtn" id="web-back" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+      <button class="wbtn" id="web-home" aria-label="Home"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+      <input id="web-url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search or type a website">
+      <button class="wbtn" id="web-reload" aria-label="Reload"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+      <button class="wbtn" id="web-star" aria-label="Add bookmark"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/></svg></button>
+      <button class="wbtn" id="web-tomap" aria-label="Back to ATS map"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21.7 2.3a1 1 0 0 0-1.1-.2L3.1 9.6a1 1 0 0 0 .1 1.9l7.1 2.1 2.1 7.1a1 1 0 0 0 1.9.1l7.5-17.5a1 1 0 0 0-.1-1z"/></svg></button>
+      <button class="wbtn" id="web-expand" aria-label="Full screen"><svg id="wico-expand" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg><svg id="wico-shrink" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
+      <button class="wbtn" id="web-out" aria-label="Open as full page"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></button>
+    </div>
+    <div id="web-marks"></div>
+    <div id="web-view">
+      <iframe id="web-frame" title="Browser" allow="fullscreen; autoplay; geolocation; encrypted-media" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div id="web-hint">Tap a bookmark or type a website above.<br>If a site stays blank, it doesn't allow being shown inside other pages — tap <b>Open as full page</b> (the arrow box) and press Back to return.</div>
+    </div>
+  </section>
+
+  <aside id="side">
+    <section id="np-card" class="card">
+      <div id="np-top">
+        <img id="np-art" alt="" referrerpolicy="no-referrer">
+        <div id="np-text">
+          <div id="np-label">Now Playing</div>
+          <div id="np-title">Nothing playing</div>
+          <div id="np-artist">Start something in Pear Desktop</div>
+          <div class="outline" id="np-out" title="Audio output"><svg viewBox="0 0 24 24" fill="currentColor"></svg><span></span></div>
+        </div>
+      </div>
+      <div>
+        <div id="np-prog"><div id="np-prog-fill"></div></div>
+        <div id="np-times"><span id="np-cur">0:00</span><span id="np-dur">0:00</span></div>
+      </div>
+      <div id="np-vol"><button class="mute-btn" id="np-mute" aria-label="Mute music"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button><div id="np-vol-bar"><div id="np-vol-track"><div id="np-vol-fill"></div></div><div id="np-vol-knob"></div></div><span id="np-vol-num">–</span></div>
+      <div id="np-ctl">
+        <button class="ctl" id="np-prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+        <button class="ctl" id="np-play" aria-label="Play or pause">
+          <svg id="np-ico-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="np-ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+        <button class="ctl" id="np-next" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+      </div>
+    </section>
+    <section id="next-card" class="card">
+      <div class="card-label">Up Next</div>
+      <div id="nc-next">—</div>
+      <div class="card-label">Playlists</div>
+      <div id="chips"></div>
+    </section>
+  </aside>
+
+<main id="player">
+  <div id="art-wrap">
+    <img id="art" alt="" referrerpolicy="no-referrer">
+    <div id="paused-badge">
+      <svg width="90" height="90" viewBox="0 0 24 24" fill="white" opacity="0.9"><path d="M8 5v14l11-7z"/></svg>
+    </div>
+  </div>
+
+  <section id="info">
+    <div>
+      <div id="title">Nothing playing</div>
+    </div>
+    <div id="artist"></div>
+
+    <div id="progress">
+      <div id="bar"><div id="bar-track"><div id="bar-fill"></div></div><div id="bar-knob"></div></div>
+      <div id="times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+    </div>
+
+    <div id="controls">
+      <button class="ctl small" id="shuffle" aria-label="Shuffle">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+      </button>
+      <button class="ctl" id="prev" aria-label="Previous">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+      </button>
+      <button class="ctl" id="play" aria-label="Play or pause">
+        <svg id="ico-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
+      <button class="ctl" id="next" aria-label="Next">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+      <button class="ctl small" id="like" aria-label="Like">
+        <svg id="ico-like-off" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg>
+        <svg id="ico-like-on" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </button>
+      <button class="ctl small" id="repeat" aria-label="Repeat" style="position:relative">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+        <span id="repeat-one" style="display:none">1</span>
+      </button>
+    </div>
+
+    <div id="extras">
+      <div id="vol">
+        <button class="mute-btn" id="pv-mute" aria-label="Mute music"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+        <div id="vol-bar"><div id="vol-track"><div id="vol-fill"></div></div><div id="vol-knob"></div></div>
+      </div>
+      <div class="outline" id="pv-out" title="Audio output"><svg viewBox="0 0 24 24" fill="currentColor"></svg><span></span></div>
+      <div id="next-up"></div>
+    </div>
+  </section>
+
+  <div id="idle">Start something in Pear Desktop and it'll show up here.</div>
+</main>
+</div>
+
+<div id="sheet">
+  <div id="sheet-head">
+    <div>
+      <h2>Playlists</h2>
+      <div id="sheet-hint">Start a playlist in Pear Desktop, then tap + to save it here. Long-press a tile to delete it.</div>
+    </div>
+    <button class="sbtn" id="sheet-close" aria-label="Close" style="width:52px;height:52px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<div id="modal">
+  <div id="modal-card">
+    <h3 id="modal-title"></h3>
+    <p id="modal-text"></p>
+    <input id="modal-input" autocomplete="off" maxlength="40">
+    <div class="row">
+      <button class="btn ghost" id="modal-no" style="flex:1">Cancel</button>
+      <button class="btn" id="modal-yes" style="flex:1">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="clockscreen">
+  <div id="cs-inner">
+    <div id="cs-time"></div>
+    <div id="cs-date"></div>
+    <div id="cs-song"><img id="cs-art" alt="" referrerpolicy="no-referrer"><span id="cs-songtext"></span></div>
+  </div>
+</div>
+
+<div id="setup">
+  <div id="card">
+    <h1 id="setup-title">Connect to Pear Desktop</h1>
+    <div id="theme-sec" style="display:flex;flex-direction:column;gap:12px">
+      <h4>Theme</h4>
+      <div id="themes"></div>
+      <h4>ATS map</h4>
+      <label>Map address (leave blank to use TruckNav on this PC, port 8628)
+        <input id="in-map" inputmode="url" autocomplete="off" placeholder="TruckNav on this PC">
+      </label>
+      <label style="flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--fg)">
+        <input id="in-mapfull" type="checkbox" style="width:26px;height:26px;flex:none;accent-color:var(--accent)">
+        Open the map as its own page (use this if the map stays blank or never asks for the code). Swipe back or press Back to return to music.
+      </label>
+      <h4>Weather</h4>
+      <label>City for "Hey Jarvis, what's the weather" (for example: Springfield, IL)
+        <input id="in-wx" autocomplete="off" placeholder="City, State">
+      </label>
+      <h4>Connection</h4>
+    </div>
+    <p>On your PC, open Pear Desktop → Plugins → enable <b>API Server</b>. Then enter that PC's local IP address below. When you press Connect, approve the pop-up that appears on the PC.</p>
+    <div class="row">
+      <label style="flex:3">PC address
+        <input id="in-host" inputmode="decimal" placeholder="192.168.1.50" autocomplete="off">
+      </label>
+      <label style="flex:1.2">Port
+        <input id="in-port" inputmode="numeric" placeholder="26538" autocomplete="off">
+      </label>
+    </div>
+    <button class="btn" id="btn-connect">Connect</button>
+    <button class="btn ghost" id="btn-cancel">Cancel</button>
+    <div id="setup-msg"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+
+  // ---- Config ----
+  let host = store.get('pd_host') || '';
+  let port = store.get('pd_port') || '26538';
+  let token = store.get('pd_token') || '';
+  let clientId = store.get('pd_client');
+  if (!clientId) { clientId = 'deskthing-' + Math.random().toString(36).slice(2, 8); store.set('pd_client', clientId); }
+
+  const base = () => `http://${host}:${port}`;
+  const api = (p) => `${base()}/api/v1${p}`;
+
+  // ---- State ----
+  const state = { song: null, playing: false, position: 0, duration: 0, volume: 50, repeat: 'NONE', shuffle: false, like: null };
+  let posStamp = performance.now();
+  let ws = null, wsRetry = 0, scrubbing = false, volDragging = false;
+
+  // ---- API ----
+  async function call(method, path, body) {
+    const res = await fetch(api(path), {
+      method,
+      headers: { 'Authorization': `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401 || res.status === 403) { token = ''; store.del('pd_token'); showSetup('Access was revoked. Reconnect and approve on the PC.', true); throw new Error('unauthorized'); }
+    if (res.status === 204) return null;
+    const type = res.headers.get('content-type') || '';
+    return type.includes('json') ? res.json() : null;
+  }
+  const post = (p, b) => call('POST', p, b).catch(() => {});
+
+  async function authorize() {
+    const res = await fetch(`${base()}/auth/${encodeURIComponent(clientId)}`, { method: 'POST' });
+    if (res.status === 403) throw new Error('denied');
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    token = data.accessToken;
+    store.set('pd_token', token);
+  }
+
+  // ---- WebSocket ----
+  function connectWS() {
+    if (ws) { try { ws.onclose = null; ws.close(); } catch {} }
+    if (!pollTimer) setDot('');
+    ws = new WebSocket(`ws://${host}:${port}/api/v1/ws?token=${encodeURIComponent(token)}`);
+    ws.onopen = () => { wsRetry = 0; setDot('ok'); refreshExtras(); };
+    startPolling();
+    ws.onmessage = (ev) => { try { handle(JSON.parse(ev.data)); } catch {} };
+    ws.onclose = (ev) => {
+      wsHasSong = false;
+      if (!pollTimer) setDot('bad');
+      if (ev.code === 1008) { token = ''; store.del('pd_token'); showSetup('Not authorized. Reconnect and approve on the PC.', true); return; }
+      const wait = Math.min(15000, 1000 * Math.pow(1.6, wsRetry++));
+      setTimeout(() => { if (token) connectWS(); }, wait);
+    };
+    ws.onerror = () => {};
+  }
+
+  // ---- Polling fallback ----
+  // Some Pear Desktop / YouTube Music versions don't push the current song over
+  // the live connection (or it can't connect). Ask for it every 2 s instead.
+  let pollTimer = null, wsHasSong = false, pollCount = 0, songPath = '/song';
+  function startPolling() { if (!pollTimer) { pollTimer = setInterval(pollOnce, 2000); pollOnce(); } }
+  async function getSong() {
+    try { return await call('GET', songPath); }
+    catch (e) {
+      if (e.message === 'unauthorized') throw e;
+      // older versions only have /song-info
+      if (songPath === '/song') { songPath = '/song-info'; return await call('GET', songPath); }
+      throw e;
+    }
+  }
+  async function pollOnce() {
+    if (!token || !host) return;
+    if (ws && ws.readyState === 1 && wsHasSong) return;   // live connection is doing the job
+    try {
+      const song = await getSong();
+      if (ws && ws.readyState === 1 && wsHasSong) return;
+      if (song && song.title) {
+        const changed = !state.song || state.song.videoId !== song.videoId || state.song.title !== song.title;
+        if (changed) { setSong(song); refreshExtras(); }
+        else {
+          if (typeof song.isPaused === 'boolean') setPlaying(!song.isPaused);
+          if (typeof song.elapsedSeconds === 'number') setPos(song.elapsedSeconds);
+        }
+      }
+      if (!(ws && ws.readyState === 1)) setDot('ok');
+      if (pollCount++ % 5 === 0) {
+        try { const v = await call('GET', '/volume'); if (v && typeof v.state === 'number') setVolume(v.state); } catch {}
+        try { const r = await call('GET', '/repeat-mode'); if (r && r.mode) setRepeat(r.mode); } catch {}
+        try { const sh = await call('GET', '/shuffle'); if (sh && typeof sh.state === 'boolean') setShuffle(sh.state); } catch {}
+      }
+    } catch { if (!(ws && ws.readyState === 1)) setDot('bad'); }
+  }
+
+  function handle(m) {
+    if (m.song && m.song.title) wsHasSong = true;
+    switch (m.type) {
+      case 'PLAYER_INFO':
+        if ('song' in m) setSong(m.song);
+        setPlaying(m.isPlaying); setPos(m.position);
+        setVolume(m.volume); setRepeat(m.repeat); setShuffle(m.shuffle);
+        break;
+      case 'VIDEO_CHANGED':
+        setSong(m.song); setPos(0); refreshExtras(); break;
+      case 'PLAYER_STATE_CHANGED':
+        setPlaying(m.isPlaying); if (typeof m.position === 'number') setPos(m.position); break;
+      case 'POSITION_CHANGED':
+        setPos(m.position); break;
+      case 'VOLUME_CHANGED':
+        setVolume(m.volume); break;
+      case 'REPEAT_CHANGED':
+        setRepeat(m.repeat); break;
+      case 'SHUFFLE_CHANGED':
+        setShuffle(m.shuffle); break;
+    }
+  }
+
+  async function refreshExtras() {
+    try {
+      const like = await call('GET', '/like-state');
+      setLike(like && like.state);
+    } catch {}
+    try {
+      const n = await call('GET', '/queue/next');
+      const artist = n && n.shortBylineText && n.shortBylineText.runs ? n.shortBylineText.runs.map(r => r.text).join('') : '';
+      $('next-up').innerHTML = n && n.title ? `Up next · <b>${esc(n.title)}</b>${artist ? ' — ' + esc(artist) : ''}` : '';
+      $('nc-next').innerHTML = n && n.title ? `<b>${esc(n.title)}</b>${artist ? ' — ' + esc(artist) : ''}` : 'Nothing queued';
+    } catch {}
+  }
+
+  // ---- Rendering ----
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+
+  function bigArt(url) {
+    if (!url) return '';
+    // Ask Google's image CDN for a larger version when possible
+    return url.replace(/=w\d+-h\d+[^&?]*/, '=w1200-h1200-l90-rj').replace(/\/(hq|mq|sd)default\.jpg/, '/maxresdefault.jpg');
+  }
+
+  function setSong(song) {
+    state.song = song || null;
+    document.body.classList.toggle('empty', !song);
+    if (!song) return;
+    $('title').textContent = song.title || 'Unknown';
+    $('artist').textContent = [song.artist, song.album].filter(Boolean).join(' · ');
+    state.duration = song.songDuration || 0;
+    $('t-dur').textContent = fmt(state.duration);
+    const src = bigArt(song.imageSrc);
+    const img = $('art');
+    if (src && img.dataset.src !== src) {
+      img.dataset.src = src;
+      img.onerror = () => { if (img.src !== song.imageSrc) img.src = song.imageSrc; };
+      img.src = src;
+      $('backdrop').style.backgroundImage = `url("${song.imageSrc}")`;
+    }
+    $('mini-title').textContent = song.title || 'Unknown';
+    $('np-title').textContent = song.title || 'Unknown';
+    $('np-artist').textContent = [song.artist, song.album].filter(Boolean).join(' · ');
+    $('np-dur').textContent = fmt(state.duration);
+    if (song.imageSrc && $('np-art').dataset.src !== song.imageSrc) { $('np-art').dataset.src = song.imageSrc; $('np-art').src = bigArt(song.imageSrc) || song.imageSrc; }
+    $('mini-artist').textContent = song.artist || '';
+    if (song.imageSrc && $('mini-art').src !== song.imageSrc) $('mini-art').src = song.imageSrc;
+    if (typeof song.isPaused === 'boolean') setPlaying(!song.isPaused);
+    if (typeof song.elapsedSeconds === 'number') setPos(song.elapsedSeconds);
+  }
+
+  function setPlaying(p) {
+    state.playing = !!p;
+    posStamp = performance.now();
+    $('ico-play').style.display = state.playing ? 'none' : '';
+    $('ico-pause').style.display = state.playing ? '' : 'none';
+    $('art-wrap').classList.toggle('paused', !state.playing);
+    $('mini-ico-play').style.display = state.playing ? 'none' : '';
+    $('mini-ico-pause').style.display = state.playing ? '' : 'none';
+    $('np-ico-play').style.display = state.playing ? 'none' : '';
+    $('np-ico-pause').style.display = state.playing ? '' : 'none';
+    if (state.playing && clockShowing() && !clockManual) hideClock();
+  }
+  function setPos(p) { if (typeof p !== 'number') return; state.position = p; posStamp = performance.now(); }
+  const SPK_ON = "M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z";
+  const SPK_OFF = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
+  function showMute(v) {
+    ['np-mute', 'pv-mute'].forEach(id => { const b = $(id); if (!b) return;
+      b.classList.toggle('muted', v === 0);
+      b.querySelector('path').setAttribute('d', v === 0 ? SPK_OFF : SPK_ON);
+      b.setAttribute('aria-label', v === 0 ? 'Unmute music' : 'Mute music'); });
+  }
+  // Mute sets YT Music to 0 and remembers the old level; unmute puts it back
+  async function setMusicMuted(mute) {
+    if (mute) {
+      if (state.volume > 0) store.set('pd_premute', String(state.volume));
+      state.volume = 0; showVolume(0); await call('POST', '/volume', { volume: 0 });
+      return 0;
+    }
+    const back = Math.max(5, +(store.get('pd_premute') || 50));
+    state.volume = back; showVolume(back); await call('POST', '/volume', { volume: back });
+    return back;
+  }
+  function showVolume(v) {
+    showMute(v);
+    $('vol-fill').style.width = v + '%'; $('vol-knob').style.left = v + '%';
+    $('np-vol-fill').style.width = v + '%'; $('np-vol-knob').style.left = v + '%';
+    $('np-vol-num').textContent = v;
+  }
+  function setVolume(v) { if (typeof v !== 'number' || volDragging) return; state.volume = v; showVolume(v); }
+  function setRepeat(r) {
+    state.repeat = r || 'NONE';
+    $('repeat').classList.toggle('on', state.repeat !== 'NONE');
+    $('repeat-one').style.display = state.repeat === 'ONE' ? '' : 'none';
+  }
+  function setShuffle(s) { state.shuffle = !!s; $('shuffle').classList.toggle('on', state.shuffle); }
+  function setLike(l) {
+    state.like = l;
+    const on = l === 'LIKE';
+    $('like').classList.toggle('on', on);
+    $('ico-like-on').style.display = on ? '' : 'none';
+    $('ico-like-off').style.display = on ? 'none' : '';
+  }
+  function setDot(cls) { $('dot').className = cls; }
+
+  // Smooth progress between server ticks
+  function tick() {
+    if (!scrubbing) {
+      let p = state.position + (state.playing ? (performance.now() - posStamp) / 1000 : 0);
+      if (state.duration) p = Math.min(p, state.duration);
+      const pct = state.duration ? (p / state.duration) * 100 : 0;
+      $('bar-fill').style.width = pct + '%';
+      $('bar-knob').style.left = pct + '%';
+      $('t-cur').textContent = fmt(p);
+      $('mini-prog-fill').style.width = pct + '%';
+      $('np-prog-fill').style.width = pct + '%';
+      $('np-cur').textContent = fmt(p);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function updateClock() {
+    const d = new Date();
+    $('clock').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M$/i, '');
+  }
+
+  // ---- Controls ----
+  $('play').onclick = () => { setPlaying(!state.playing); post('/toggle-play'); };
+  $('next').onclick = () => post('/next');
+  $('prev').onclick = () => post('/previous');
+  $('shuffle').onclick = () => post('/shuffle');
+  $('repeat').onclick = () => post('/switch-repeat', { iteration: 1 });
+  $('like').onclick = () => {
+    setLike(state.like === 'LIKE' ? 'INDIFFERENT' : 'LIKE');
+    post('/like').then(() => setTimeout(refreshExtras, 600));
+  };
+
+  // Drag-to-seek
+  function dragger(el, onMove, onEnd) {
+    const frac = (e) => { const r = el.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+    el.addEventListener('pointerdown', (e) => {
+      el.setPointerCapture(e.pointerId); onMove(frac(e), true);
+      const move = (ev) => onMove(frac(ev), false);
+      const up = (ev) => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); onEnd(frac(ev)); };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    });
+  }
+  dragger($('bar'), (f) => {
+    scrubbing = true;
+    $('bar-fill').style.width = f * 100 + '%'; $('bar-knob').style.left = f * 100 + '%';
+    $('t-cur').textContent = fmt(f * state.duration);
+  }, (f) => {
+    const s = Math.round(f * state.duration);
+    setPos(s); scrubbing = false;
+    post('/seek-to', { seconds: s });
+  });
+
+  let volTimer = null;
+  ['vol-bar', 'np-vol-bar'].forEach(id => dragger($(id), (f) => {
+    volDragging = true;
+    const v = Math.round(f * 100);
+    showVolume(v);
+    clearTimeout(volTimer); volTimer = setTimeout(() => post('/volume', { volume: v }), 60);
+  }, (f) => {
+    const v = Math.round(f * 100);
+    state.volume = v; showVolume(v); post('/volume', { volume: v });
+    setTimeout(() => { volDragging = false; }, 400);
+  }));
+
+  // Keyboard / media keys (handy if a USB or Bluetooth knob is paired to the phone)
+  document.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === ' ' || k === 'MediaPlayPause') { e.preventDefault(); $('play').click(); }
+    else if (k === 'MediaTrackNext' || k === 'ArrowRight') $('next').click();
+    else if (k === 'MediaTrackPrevious' || k === 'ArrowLeft') $('prev').click();
+    else if (k === 'ArrowUp') post('/volume', { volume: Math.min(100, state.volume + 5) });
+    else if (k === 'ArrowDown') post('/volume', { volume: Math.max(0, state.volume - 5) });
+  });
+
+  // ---- Themes ----
+  // [id, label, swatch background, play-button color, browser bar color]
+  const THEMES = [
+    ['album',    'Album',    'linear-gradient(135deg,#7a3b2e,#2a1a2e 60%,#0b0b0d)', '#f4f1ec', '#0b0b0d'],
+    ['midnight', 'Midnight', '#000',                                         '#e8e8ec', '#000000'],
+    ['sunset',   'Sunset',   'linear-gradient(135deg,#ff6e40,#d6336c 50%,#54248c)', '#ffb547', '#1a0b14'],
+    ['forest',   'Forest',   'linear-gradient(160deg,#2e5e3e,#10281c 60%,#465a28)', '#d9efc6', '#0c1410'],
+    ['ocean',    'Ocean',    'linear-gradient(180deg,#0e4678,#061e3c 55%,#0c6e82)', '#4fd1e8', '#06121c'],
+    ['neon',     'Neon',     'linear-gradient(135deg,#ff3df2,#3c148c 50%,#00e5ff)', '#00e5ff', '#0b0418'],
+    ['amber',    'Amber',    '#0d0900',                                      '#ffb000', '#0d0900'],
+    ['paper',    'Paper',    '#f2eee6',                                      '#1d1b18', '#f2eee6'],
+  ];
+  function applyTheme(id) {
+    const t = THEMES.find(x => x[0] === id) || THEMES[0];
+    if (t[0] === 'album') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t[0]);
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = t[4];
+    store.set('pd_theme', t[0]);
+    document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('sel', s.dataset.id === t[0]));
+  }
+  function renderThemes() {
+    const box = $('themes'); box.innerHTML = '';
+    const cur = store.get('pd_theme') || 'album';
+    THEMES.forEach(([id, label, bg, play]) => {
+      const b = document.createElement('button');
+      b.className = 'swatch' + (id === cur ? ' sel' : ''); b.dataset.id = id;
+      b.innerHTML = `<i style="background:${bg};--sw-play:${play}"></i>${label}`;
+      b.onclick = () => applyTheme(id);
+      box.appendChild(b);
+    });
+  }
+  applyTheme(store.get('pd_theme') || 'album');
+
+  // ---- Toast ----
+  let toastTimer = null;
+  function toast(msg, ms = 2200) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); if (ms) toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+  }
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  // ---- Modal (text input or confirm) ----
+  function modal({ title, text = '', input = null, yes = 'Save', danger = false }) {
+    return new Promise((resolve) => {
+      $('modal-title').textContent = title;
+      $('modal-text').textContent = text; $('modal-text').style.display = text ? '' : 'none';
+      const inp = $('modal-input');
+      inp.style.display = input === null ? 'none' : ''; inp.value = input || '';
+      $('modal-yes').textContent = yes; $('modal-yes').className = 'btn' + (danger ? ' danger' : '');
+      $('modal').classList.add('show');
+      if (input !== null) setTimeout(() => { inp.focus(); inp.select(); }, 50);
+      const done = (val) => { $('modal').classList.remove('show'); $('modal-yes').onclick = $('modal-no').onclick = inp.onkeydown = null; resolve(val); };
+      $('modal-yes').onclick = () => done(input === null ? true : inp.value.trim());
+      $('modal-no').onclick = () => done(null);
+      inp.onkeydown = (e) => { if (e.key === 'Enter') $('modal-yes').click(); };
+    });
+  }
+
+  // ---- Playlist presets ----
+  // Pear Desktop's API can't open a playlist directly, so a preset stores the
+  // song IDs from the queue you had playing and rebuilds that queue on demand.
+  const loadPresets = () => { try { return JSON.parse(store.get('pd_presets') || '[]'); } catch { return []; } };
+  const savePresets = (p) => { store.set('pd_presets', JSON.stringify(p)); renderChips(); };
+  let presets = loadPresets();
+  let loadingPreset = false;
+
+  const rendererOf = (it) => it && (it.playlistPanelVideoRenderer || (it.playlistPanelVideoWrapperRenderer && it.playlistPanelVideoWrapperRenderer.primaryRenderer && it.playlistPanelVideoWrapperRenderer.primaryRenderer.playlistPanelVideoRenderer));
+  const thumbOf = (r) => { const t = r && r.thumbnail && r.thumbnail.thumbnails; return t && t.length ? t[t.length - 1].url : ''; };
+
+  function renderGrid() {
+    const g = $('grid'); g.innerHTML = '';
+    const add = document.createElement('button');
+    add.className = 'tile add';
+    add.innerHTML = `<div class="tile-art"><svg width="54" height="54" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div><div class="tile-name">Save current queue</div>`;
+    add.onclick = saveCurrentQueue;
+    g.appendChild(add);
+    presets.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.className = 'tile';
+      b.innerHTML = `<div class="tile-art">${p.art ? `<img src="${esc(p.art)}" referrerpolicy="no-referrer" alt="">` : ''}</div><div class="tile-name">${esc(p.name)}</div><div class="tile-sub">${p.ids.length} songs</div>`;
+      let pressTimer = null, longPressed = false;
+      b.addEventListener('pointerdown', () => { longPressed = false; pressTimer = setTimeout(async () => {
+        longPressed = true; b.classList.add('deleting');
+        const ok = await modal({ title: `Delete "${p.name}"?`, text: 'This only removes the shortcut. Your playlist in YouTube Music is not touched.', yes: 'Delete', danger: true });
+        b.classList.remove('deleting');
+        if (ok) { presets.splice(i, 1); savePresets(presets); renderGrid(); }
+      }, 650); });
+      const cancel = () => clearTimeout(pressTimer);
+      b.addEventListener('pointerup', cancel); b.addEventListener('pointerleave', cancel); b.addEventListener('pointercancel', cancel);
+      b.addEventListener('contextmenu', (e) => e.preventDefault());
+      b.onclick = () => { if (!longPressed) playPreset(p); };
+      g.appendChild(b);
+    });
+  }
+
+  async function saveCurrentQueue() {
+    let q;
+    try { q = await call('GET', '/queue'); } catch { toast('Couldn\'t read the queue'); return; }
+    const items = (q && q.items) || [];
+    const seen = new Set(), ids = [];
+    let art = '';
+    items.forEach((it) => { const r = rendererOf(it); if (r && r.videoId && !seen.has(r.videoId)) { seen.add(r.videoId); ids.push(r.videoId); if (!art) art = thumbOf(r); } });
+    if (!ids.length) { toast('Nothing in the queue yet — start a playlist in Pear Desktop first', 3500); return; }
+    const suggested = (state.song && state.song.album) || `Playlist ${presets.length + 1}`;
+    const name = await modal({ title: 'Save as preset', text: `${ids.length} songs from the current queue.`, input: suggested });
+    if (!name) return;
+    presets.push({ name, ids, art: (state.song && state.song.imageSrc) || art });
+    savePresets(presets); renderGrid(); toast(`Saved "${name}"`);
+  }
+
+  async function playPreset(p) {
+    if (loadingPreset) { toast('Still loading the last one…'); return; }
+    loadingPreset = true; closeSheet();
+    try {
+      toast(`Loading "${p.name}"…`, 0);
+      await call('DELETE', '/queue');
+      await sleep(400);
+      await call('POST', '/queue', { videoId: p.ids[0], insertPosition: 'INSERT_AT_END' });
+      await sleep(900);
+      await call('PATCH', '/queue', { index: 0 });
+      await sleep(400);
+      await call('POST', '/play');
+      // Add the rest in order, one at a time, so they don't land shuffled
+      for (let i = 1; i < p.ids.length; i++) {
+        await call('POST', '/queue', { videoId: p.ids[i], insertPosition: 'INSERT_AT_END' });
+        if (i % 5 === 0) toast(`Loading "${p.name}" · ${i + 1}/${p.ids.length}`, 0);
+        await sleep(220);
+      }
+      toast(`"${p.name}" is ready`);
+      refreshExtras();
+    } catch { toast('Couldn\'t load that preset'); }
+    loadingPreset = false;
+  }
+
+  function openSheet() { renderGrid(); $('sheet').classList.add('show'); }
+  function closeSheet() { $('sheet').classList.remove('show'); }
+  // ---- Apps screen ----
+  const appsShowing = () => $('apps').classList.contains('show');
+  function showApps(on) { $('apps').classList.toggle('show', on); $('btn-apps').classList.toggle('active', on); if (on) { closeSheet(); updateDockApps(); } }
+  function updateDockApps() { if (appsShowing()) ['btn-dash','btn-map','btn-web','btn-music'].forEach(id => $(id).classList.remove('active')); }
+  $('btn-apps').onclick = () => showApps(!appsShowing());
+  $('apps').onclick = (e) => {
+    const t = e.target.closest('.tile');
+    if (!t) { if (e.target.id === 'apps') showApps(false); return; }
+    const a = t.dataset.app;
+    showApps(false);
+    if (a === 'dash') setView('dash');
+    else if (a === 'map') { setPane('map'); setView('map'); }
+    else if (a === 'music') setView('player');
+    else if (a === 'lib') openSheet();
+    else if (a === 'web') { setPane('web'); setView('map'); }
+    else if (a === 'jarvis') $('mic').click();
+    else if (a === 'clock') showClock(true);
+    else if (a === 'settings') showSetup('');
+  };
+  $('sheet-close').onclick = closeSheet;
+
+  // ---- Clock screen ----
+  // Shows automatically after music has been paused (or stopped) for a while.
+  const CLOCK_AFTER_MS = 2 * 60 * 1000;
+  let idleSince = performance.now();
+  let clockManual = false;
+
+  function renderClock() {
+    const d = new Date();
+    const parts = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).split(' ');
+    $('cs-time').innerHTML = esc(parts[0]) + (parts[1] ? `<span id="cs-ampm">${esc(parts[1])}</span>` : '');
+    $('cs-date').textContent = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+    const s = state.song;
+    $('cs-song').style.display = s ? '' : 'none';
+    if (s) { $('cs-songtext').textContent = `${state.playing ? 'Playing' : 'Paused'} · ${s.title}${s.artist ? ' — ' + s.artist : ''}`; if ($('cs-art').src !== s.imageSrc) $('cs-art').src = s.imageSrc || ''; }
+  }
+  function nudgeClock() {
+    // Drift a few pixels each minute so the OLED screen doesn't burn in
+    const x = Math.round((Math.random() - 0.5) * 6) + 'vw', y = Math.round((Math.random() - 0.5) * 8) + 'vh';
+    $('cs-inner').style.transform = `translate(${x}, ${y})`;
+  }
+  function showClock(manual) { clockManual = !!manual; renderClock(); nudgeClock(); $('clockscreen').classList.add('show'); closeSheet(); }
+  function hideClock() { $('clockscreen').classList.remove('show'); clockManual = false; idleSince = performance.now(); }
+  const clockShowing = () => $('clockscreen').classList.contains('show');
+
+  $('clock').onclick = () => showClock(true);
+  $('clockscreen').onclick = hideClock;
+
+  function clockLoop() {
+    const busy = $('setup').classList.contains('show') || $('modal').classList.contains('show') || loadingPreset || currentView() !== 'player';
+    if (state.playing || busy) idleSince = performance.now();
+    if (!clockShowing() && !busy && !state.playing && performance.now() - idleSince > CLOCK_AFTER_MS) showClock(false);
+    if (clockShowing()) {
+      // Wake back to the player when music starts again (unless opened by hand)
+      if (state.playing && !clockManual) hideClock(); else renderClock();
+    }
+  }
+  setInterval(clockLoop, 5000);
+  setInterval(() => { if (clockShowing()) nudgeClock(); }, 60000);
+  // Any touch on the player resets the idle timer
+  document.addEventListener('pointerdown', () => { if (!clockShowing()) idleSince = performance.now(); }, true);
+
+  // ---- Setup flow ----
+  function showSetup(msg, isErr) {
+    $('in-host').value = host; $('in-port').value = port;
+    $('in-map').value = store.get('pd_map') || '';
+    $('in-mapfull').checked = store.get('pd_mapfull') === '1';
+    $('setup-msg').textContent = msg || '';
+    $('setup-msg').className = isErr ? 'err' : '';
+    $('btn-cancel').style.display = token ? '' : 'none';
+    $('btn-cancel').textContent = 'Done';
+    $('setup-title').textContent = token ? 'Settings' : 'Connect to Pear Desktop';
+    $('theme-sec').style.display = token ? 'flex' : 'none';
+    renderThemes();
+    $('in-wx').value = store.get('pd_wxname') || '';
+    $('setup').classList.add('show');
+  }
+  function hideSetup() { $('setup').classList.remove('show'); }
+
+  $('gear').onclick = () => showSetup('');
+  function saveWeatherSetting() {
+    const v = $('in-wx').value.trim();
+    if (v !== (store.get('pd_wxname') || '')) { if (v) store.set('pd_wxname', v); else store.del('pd_wxname'); store.del('pd_wx'); WX = null; }
+  }
+  function saveMapSetting() {
+    saveWeatherSetting();
+    if ($('in-mapfull').checked) store.set('pd_mapfull', '1'); else store.del('pd_mapfull');
+    let v = $('in-map').value.trim();
+    if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
+    if (v === defaultMap()) v = '';
+    if ((store.get('pd_map') || '') !== v) {
+      if (v) store.set('pd_map', v); else store.del('pd_map');
+      if (mapLoadedUrl) loadMap(true);
+    }
+  }
+  $('btn-cancel').onclick = () => { saveMapSetting(); hideSetup(); const v = currentView(); setView(v === 'map' && mapFull() ? 'dash' : v); if (!mapFull()) loadMap(false); };
+  $('btn-connect').onclick = async () => {
+    const h = $('in-host').value.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const p = $('in-port').value.trim() || '26538';
+    if (!h) { $('setup-msg').textContent = 'Enter the PC\'s IP address.'; $('setup-msg').className = 'err'; return; }
+    host = h; port = p; store.set('pd_host', host); store.set('pd_port', port);
+    $('setup-msg').className = ''; $('setup-msg').textContent = 'Waiting for you to click Allow on the PC…';
+    try {
+      await authorize();
+      hideSetup(); connectWS();
+    } catch (err) {
+      $('setup-msg').className = 'err';
+      $('setup-msg').textContent = err.message === 'denied'
+        ? 'The PC denied the request. Try again and click Allow.'
+        : 'Couldn\'t reach Pear Desktop. Check the IP, that the API Server plugin is on, and that both devices are on the same Wi-Fi.';
+    }
+  };
+
+  // Keep the screen awake where supported
+  async function wake() { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch {} }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { wake(); if (token && (!ws || ws.readyState > 1)) connectWS(); } });
+
+  // ---- ATS map ----
+  // The map page is loaded once and kept alive while hidden, so switching
+  // back and forth doesn't drop the Navigator's connection to the game.
+  // TruckNav runs on the same PC as Pear Desktop, on port 8628
+  const defaultMap = () => `http://${host || 'localhost'}:8628/maps/navvoice.html`;
+  const mapUrl = () => store.get('pd_map') || defaultMap();
+  const mapFull = () => store.get('pd_mapfull') === '1';
+  let mapLoadedUrl = '';
+  let mapLoadTimer = null;
+
+  function loadMap(force) {
+    if (mapFull()) { showMapPlaceholder(); return; }
+    const url = mapUrl();
+    if (!force && mapLoadedUrl === url) return;
+    mapLoadedUrl = url;
+    $('map-empty').style.display = 'none';
+    clearTimeout(mapLoadTimer);
+    mapLoadTimer = setTimeout(() => { if (!navigator.onLine) $('map-empty').style.display = 'grid'; }, 8000);
+    $('map-frame').onload = () => clearTimeout(mapLoadTimer);
+    $('map-frame').src = force ? url + (url.includes('?') ? '&' : '?') + 'r=' + Date.now() : url;
+  }
+  function showMapPlaceholder() {
+    $('map-frame').removeAttribute('src'); mapLoadedUrl = '';
+    $('map-empty-text').innerHTML = 'The map opens as its own page<br>(Settings → ATS map).';
+    $('map-empty').style.display = 'grid';
+  }
+  function openFullMapPage() {
+    store.set('pd_view', 'dash');
+    window.location.href = mapUrl();
+  }
+
+  // ---- Views: dash (map + cards), map (full map), player (big music) ----
+  const currentView = () => $('stage').dataset.view;
+  function setView(v) {
+    if (v === 'map' && mapFull() && currentPane() === 'map') { openFullMapPage(); return; }
+    $('stage').dataset.view = v;
+    store.set('pd_view', v);
+    updateDock();
+    ['ico', 'wico'].forEach(pre => {
+      $(pre + '-expand').style.display = v === 'map' ? 'none' : '';
+      $(pre + '-shrink').style.display = v === 'map' ? '' : 'none';
+    });
+    if (v !== 'player') { loadMap(false); if (clockShowing()) hideClock(); }
+    closeSheet();
+    idleSince = performance.now();
+  }
+  const openMap = () => setView('map');
+  // The map slot shows either the ATS map or the browser ("pane")
+  const currentPane = () => $('stage').dataset.pane || 'map';
+  function setPane(p) {
+    $('stage').dataset.pane = p;
+    store.set('pd_pane', p);
+    if (p === 'web') initBrowser();
+    updateDock();
+  }
+  function updateDock() {
+    const v = currentView(), p = currentPane();
+    $('btn-dash').classList.toggle('active', v === 'dash');
+    $('btn-map').classList.toggle('active', v === 'map' && p === 'map');
+    $('btn-web').classList.toggle('active', v === 'map' && p === 'web');
+    $('btn-music').classList.toggle('active', v === 'player');
+  }
+
+  ['btn-dash', 'btn-map', 'btn-music', 'btn-web', 'gear', 'dock-time'].forEach(id => $(id).addEventListener('click', () => { if (appsShowing()) showApps(false); }, true));
+  $('btn-dash').onclick = () => setView('dash');
+  $('btn-map').onclick = () => { setPane('map'); setView('map'); };
+  $('btn-music').onclick = () => setView('player');
+  $('btn-web').onclick = () => { setPane('web'); setView('map'); };
+  $('map-toweb').onclick = () => setPane('web');
+  $('web-tomap').onclick = () => setPane('map');
+  $('web-expand').onclick = () => setView(currentView() === 'map' ? 'dash' : 'map');
+  $('map-expand').onclick = () => setView(currentView() === 'map' ? 'dash' : 'map');
+  $('map-reload').onclick = () => loadMap(true);
+  $('map-open-full').onclick = openFullMapPage;
+  $('np-top').onclick = () => setView('player');
+  $('dock-time').onclick = () => showClock(true);
+  [['mini', 'np'], ['np', 'np']].forEach(([pre]) => {
+    $(pre + '-play').onclick = () => $('play').click();
+    $(pre + '-next').onclick = () => post('/next');
+    $(pre + '-prev').onclick = () => post('/previous');
+  });
+
+  // playlist shortcuts on the dashboard
+  function renderChips() {
+    const box = $('chips'); if (!box) return;
+    box.innerHTML = '';
+    const list = loadPresets().slice(0, 3);
+    if (!list.length) { box.innerHTML = '<div id="chips-empty">Open Apps, then Playlists, to save a playlist and pin it here.</div>'; return; }
+    list.forEach(p => {
+      const b = document.createElement('button'); b.className = 'chip';
+      b.innerHTML = (p.art ? `<img src="${esc(p.art)}" referrerpolicy="no-referrer" alt="">` : '<i></i>') + `<span>${esc(p.name)}</span>`;
+      b.onclick = () => playPreset(p);
+      box.appendChild(b);
+    });
+  }
+
+  // ---- Browser app ----
+  // Pages load inside a frame so the dock stays put. Some sites (Google, YouTube,
+  // banks…) refuse to be framed; "Open as full page" leaves the Desk Thing and
+  // Android Back returns here.
+  const defaultMarks = () => [
+    { name: 'ATS Map', url: mapUrl() },
+    { name: 'Weather Radar', url: 'https://embed.windy.com/embed2.html?lat=39.8&lon=-96.0&zoom=4&overlay=radar&product=radar&level=surface&metricWind=mph&metricTemp=%C2%B0F' },
+    { name: 'Google', url: 'https://www.google.com/webhp?igu=1' },
+    { name: 'Wikipedia', url: 'https://en.m.wikipedia.org/' },
+  ];
+  const loadMarks = () => { try { const m = JSON.parse(store.get('pd_marks') || 'null'); return Array.isArray(m) ? m : defaultMarks(); } catch { return defaultMarks(); } };
+  const saveMarks = (m) => store.set('pd_marks', JSON.stringify(m));
+  let marks = loadMarks();
+  let webHistory = [];
+  let webStarted = false;
+
+  function toUrl(text) {
+    const t = text.trim();
+    if (!t) return '';
+    if (/^https?:\/\//i.test(t)) return t;
+    if (/^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(t) || /^\d{1,3}(\.\d{1,3}){3}(:\d+)?/.test(t)) {
+      // local network addresses don't use https
+      return (/^(\d{1,3}\.){3}\d{1,3}|^localhost/.test(t) ? 'http://' : 'https://') + t;
+    }
+    return 'https://www.google.com/search?igu=1&q=' + encodeURIComponent(t);
+  }
+  function webGo(url, push = true) {
+    if (!url) return;
+    if (push && webHistory[webHistory.length - 1] !== url) webHistory.push(url);
+    $('web-hint').style.display = 'none';
+    $('web-frame').src = url;
+    $('web-url').value = url.replace(/[?&]igu=1/, '');
+    $('web-back').disabled = webHistory.length < 2;
+    store.set('pd_web_last', url);
+  }
+  function renderMarks() {
+    const box = $('web-marks'); box.innerHTML = '';
+    marks.forEach((m, i) => {
+      const b = document.createElement('button'); b.className = 'mark';
+      b.innerHTML = `<b>${esc((m.name || '?').trim().charAt(0).toUpperCase())}</b>${esc(m.name)}`;
+      let t = null, long = false;
+      b.addEventListener('pointerdown', () => { long = false; t = setTimeout(async () => {
+        long = true; b.classList.add('deleting');
+        const ok = await modal({ title: `Remove "${m.name}"?`, text: 'This only removes the bookmark.', yes: 'Remove', danger: true });
+        b.classList.remove('deleting');
+        if (ok) { marks.splice(i, 1); saveMarks(marks); renderMarks(); }
+      }, 650); });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => clearTimeout(t)));
+      b.addEventListener('contextmenu', e => e.preventDefault());
+      b.onclick = () => { if (!long) webGo(m.url); };
+      box.appendChild(b);
+    });
+  }
+  function initBrowser() {
+    if (webStarted) return;
+    webStarted = true;
+    renderMarks();
+    const last = store.get('pd_web_last');
+    if (last) webGo(last); else $('web-back').disabled = true;
+  }
+  $('web-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') { webGo(toUrl($('web-url').value)); $('web-url').blur(); } });
+  $('web-url').addEventListener('focus', () => $('web-url').select());
+  $('web-back').onclick = () => { if (webHistory.length > 1) { webHistory.pop(); webGo(webHistory[webHistory.length - 1], false); } };
+  $('web-home').onclick = () => { if (marks[0]) webGo(marks[0].url); };
+  $('web-reload').onclick = () => { const u = $('web-frame').getAttribute('src'); if (u) { $('web-frame').src = 'about:blank'; setTimeout(() => $('web-frame').src = u, 50); } };
+  $('web-out').onclick = () => { const u = $('web-frame').getAttribute('src'); if (u) window.location.href = u; };
+  $('web-star').onclick = async () => {
+    const u = $('web-frame').getAttribute('src');
+    if (!u) { toast('Open a page first'); return; }
+    let guess = ''; try { guess = new URL(u).hostname.replace(/^www\./, '').split('.')[0]; guess = guess.charAt(0).toUpperCase() + guess.slice(1); } catch {}
+    const name = await modal({ title: 'Add bookmark', text: u.replace(/[?&]igu=1/, ''), input: guess });
+    if (!name) return;
+    marks.push({ name, url: u }); saveMarks(marks); renderMarks(); toast(`Added "${name}"`);
+  };
+
+  // ---- Audio output (from the small helper running on the PC, port 26540) ----
+  const OUT_ICONS = {
+    headphones: 'M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h2v-8H5v-1a7 7 0 0 1 14 0v1h-2v8h2a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9z',
+    tv: 'M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5v2h8v-2h5a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 14H3V5h18v12z',
+    speaker: 'M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-5 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm0 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z',
+    muted: 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z',
+  };
+  let outFails = 0;
+  async function pollOutput() {
+    if (!host) return;
+    try {
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500);
+      const r = await fetch(`http://${host}:26540/output`, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(t);
+      const o = await r.json();
+      outFails = 0;
+      if (!o || !o.name) throw new Error('no device');
+      const icon = o.muted ? OUT_ICONS.muted
+        : (o.kind === 'headphones' || o.kind === 'headset') ? OUT_ICONS.headphones
+        : (o.kind === 'hdmi' || o.kind === 'digital') ? OUT_ICONS.tv : OUT_ICONS.speaker;
+      const label = o.name + (o.muted ? ' · muted' : (o.volume >= 0 ? ` · ${o.volume}%` : ''));
+      ['np-out', 'pv-out'].forEach(id => {
+        const el = $(id); el.classList.add('show');
+        el.querySelector('svg').innerHTML = `<path d="${icon}"/>`;
+        el.querySelector('span').textContent = label;
+        el.title = 'Audio output: ' + o.name;
+      });
+    } catch {
+      if (++outFails >= 2) ['np-out', 'pv-out'].forEach(id => $(id).classList.remove('show'));
+    }
+  }
+  setInterval(pollOutput, 4000);
+
+  // ---- Map voice directions (navvoice.html, served by TruckNav) ----
+  let voiceOn = (() => { try { return localStorage.getItem('pd_voice') !== '0'; } catch { return true; } })();
+  function sendVoice(extra) {
+    try { $('map-frame').contentWindow.postMessage(Object.assign({ navVoiceCmd: 'set', on: voiceOn }, extra || {}), '*'); } catch {}
+  }
+  function showVoiceBtn() {
+    $('map-voice').classList.toggle('off', !voiceOn);
+    $('ico-voice-on').style.display = voiceOn ? '' : 'none';
+    $('ico-voice-off').style.display = voiceOn ? 'none' : '';
+  }
+  $('map-voice').onclick = () => {
+    voiceOn = !voiceOn;
+    try { localStorage.setItem('pd_voice', voiceOn ? '1' : '0'); } catch {}
+    showVoiceBtn(); sendVoice();
+    if (voiceOn) { sendVoice({ navVoiceCmd: 'test' }); toast('Voice directions on'); } else toast('Voice directions off');
+  };
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.navVoice === 'ready') sendVoice();
+    if (d.navVoice === 'blocked') toast('Tap the map once so the voice can play', 3500);
+  });
+  showVoiceBtn();
+
+
+  // ---- Assistant: speak into the PC mic, it controls music and TruckNav ----
+  const HELPER = () => `http://${host}:26540`;
+  const NUMS = { zero:0, ten:10, twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90, hundred:100, 'one hundred':100,
+    five:5, fifteen:15, 'twenty five':25, 'thirty five':35, 'forty five':45, 'fifty five':55, 'sixty five':65, 'seventy five':75, 'eighty five':85, 'ninety five':95 };
+  let asstTimer = null, asstBusy = false;
+  function asstShow(stateCls, reply, heard) {
+    const a = $('asst'); a.className = 'show ' + (stateCls || '');
+    if (reply !== undefined) $('asst-reply').textContent = reply;
+    if (heard !== undefined) $('asst-heard').textContent = heard ? '“' + heard + '”' : '';
+    clearTimeout(asstTimer);
+  }
+  function asstHide() { $('asst').className = ''; $('mic').classList.remove('busy'); clearTimeout(asstTimer); }
+  function asstLater(ms = 6000) { clearTimeout(asstTimer); asstTimer = setTimeout(asstHide, ms); }
+  function say(text) {
+    if (!host || !text) return;
+    try { const a = new Audio(`${HELPER()}/speak?text=${encodeURIComponent(text)}`); a.play().catch(() => {}); } catch {}
+  }
+  function reply(text, heard) { asstShow('', text, heard); say(text); asstLater(); }
+
+  // Find the first song in Pear Desktop's search results
+  function firstVideoId(obj) {
+    let found = null;
+    (function walk(o, depth) {
+      if (found || !o || depth > 40) return;
+      if (Array.isArray(o)) { for (const x of o) walk(x, depth + 1); return; }
+      if (typeof o !== 'object') return;
+      const w = o.watchEndpoint || (o.navigationEndpoint && o.navigationEndpoint.watchEndpoint);
+      if (w && w.videoId) { found = w.videoId; return; }
+      if (o.playlistItemData && o.playlistItemData.videoId) { found = o.playlistItemData.videoId; return; }
+      for (const k in o) walk(o[k], depth + 1);
+    })(obj, 0);
+    return found;
+  }
+  async function playSearch(q) {
+    const res = await call('POST', '/search', { query: q });
+    const id = firstVideoId(res);
+    if (!id) return false;
+    await call('POST', '/queue', { videoId: id, insertPosition: 'INSERT_AFTER_CURRENT_VIDEO' });
+    await new Promise(r => setTimeout(r, 700));
+    await call('POST', '/next');
+    setTimeout(() => { pollOnce(); refreshExtras(); }, 1500);
+    return true;
+  }
+
+  // Ask the voice page (inside the map) to set a TruckNav destination
+  let destReq = 0;
+  function mapRequest(msg, wantType) {
+    return new Promise((resolve) => {
+      const reqId = ++destReq;
+      const onMsg = (e) => { const d = e.data || {}; if (d.navVoice === wantType && d.reqId === reqId) { window.removeEventListener('message', onMsg); clearTimeout(t); resolve(d); } };
+      const t = setTimeout(() => { window.removeEventListener('message', onMsg); resolve(null); }, 8000);
+      window.addEventListener('message', onMsg);
+      try { $('map-frame').contentWindow.postMessage(Object.assign({ reqId }, msg), '*'); } catch { resolve(null); }
+    });
+  }
+
+  // ---- Weather (Open-Meteo, no key needed) for the city set in Settings ----
+  // The city is set in Settings; it's looked up once with Open-Meteo's free geocoder and remembered
+  var WX = (() => { try { return JSON.parse(store.get('pd_wx')) || null; } catch { return null; } })();
+  const US_STATES = { al:'alabama', ak:'alaska', az:'arizona', ar:'arkansas', ca:'california', co:'colorado', ct:'connecticut', de:'delaware', fl:'florida', ga:'georgia',
+    hi:'hawaii', id:'idaho', il:'illinois', in:'indiana', ia:'iowa', ks:'kansas', ky:'kentucky', la:'louisiana', me:'maine', md:'maryland', ma:'massachusetts', mi:'michigan',
+    mn:'minnesota', ms:'mississippi', mo:'missouri', mt:'montana', ne:'nebraska', nv:'nevada', nh:'new hampshire', nj:'new jersey', nm:'new mexico', ny:'new york',
+    nc:'north carolina', nd:'north dakota', oh:'ohio', ok:'oklahoma', or:'oregon', pa:'pennsylvania', ri:'rhode island', sc:'south carolina', sd:'south dakota',
+    tn:'tennessee', tx:'texas', ut:'utah', vt:'vermont', va:'virginia', wa:'washington', wv:'west virginia', wi:'wisconsin', wy:'wyoming', dc:'district of columbia' };
+  async function findWeatherPlace() {
+    const name = store.get('pd_wxname');
+    if (!name) return null;
+    const [city, region = ''] = name.split(',').map(x => x.trim());
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=20&language=en&format=json`);
+    const list = ((await r.json()).results) || [];
+    const want = region.toLowerCase(), wantFull = US_STATES[want] || want;
+    const hit = list.find(x => want && ((x.admin1 || '').toLowerCase() === wantFull || (x.country_code || '').toLowerCase() === want || (x.country || '').toLowerCase() === want)) || list[0];
+    if (!hit) return null;
+    const place = { lat: hit.latitude, lon: hit.longitude, name: hit.name };
+    store.set('pd_wx', JSON.stringify(place));
+    return place;
+  }
+  const WX_CODES = [[0, 'clear'], [1, 'mostly clear'], [2, 'partly cloudy'], [3, 'cloudy'], [48, 'foggy'], [57, 'drizzly'], [67, 'rainy'], [77, 'snowy'], [82, 'showery'], [86, 'snow showers'], [99, 'stormy']];
+  const wxWord = (c) => (WX_CODES.find(([max]) => c <= max) || [0, 'unsettled'])[1];
+  async function weatherReply(t) {
+    if (!WX) WX = await findWeatherPlace();
+    if (!WX) return store.get('pd_wxname') ? `I couldn't find ${store.get('pd_wxname')}. Check the weather city in Settings.` : 'Set your weather city in Settings first.';
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${WX.lat}&longitude=${WX.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=2`, { cache: 'no-store' });
+    const w = await r.json();
+    const d = w.daily, c = w.current, R = Math.round;
+    if (/tomorrow/.test(t)) {
+      return `Tomorrow in ${WX.name}: ${wxWord(d.weather_code[1])}, high of ${R(d.temperature_2m_max[1])}, low of ${R(d.temperature_2m_min[1])}, ${d.precipitation_probability_max[1]} percent chance of rain.`;
+    }
+    if (/rain/.test(t)) {
+      const p = d.precipitation_probability_max[0];
+      return p >= 50 ? `Yes, likely. ${p} percent chance of rain today.` : p >= 20 ? `Maybe. ${p} percent chance of rain today.` : `Probably not. Only ${p} percent chance of rain today.`;
+    }
+    let s = `It's ${R(c.temperature_2m)} degrees and ${wxWord(c.weather_code)} in ${WX.name}`;
+    if (Math.abs(c.apparent_temperature - c.temperature_2m) >= 5) s += `, feels like ${R(c.apparent_temperature)}`;
+    s += `. Today's high is ${R(d.temperature_2m_max[0])}, low ${R(d.temperature_2m_min[0])}`;
+    if (d.precipitation_probability_max[0] >= 20) s += `, with a ${d.precipitation_probability_max[0]} percent chance of rain`;
+    return s + '.';
+  }
+
+  function spokenNumber(t) {
+    const m = t.match(/(\d{1,3})/); if (m) return Math.min(100, +m[1]);
+    const w = t.replace(/percent|per cent/g, '').replace(/^.*?(volume( to)?|to)\s+/, '').trim();
+    return NUMS[w] !== undefined ? NUMS[w] : null;
+  }
+
+  async function runCommand(raw) {
+    const t = String(raw || '').toLowerCase().replace(/[.,!?]/g, '').replace(/\s+/g, ' ').trim();
+    if (!t) { reply("I didn't catch that"); return; }
+    asstShow('thinking', 'Working on it…', raw);
+    try {
+      let m;
+      if (/^(next|skip|next song|skip (this )?song|play next( song)?)$/.test(t)) { await call('POST', '/next'); return reply('Skipping', raw); }
+      if (/^(previous|back|go back|previous song|last song)$/.test(t)) { await call('POST', '/previous'); return reply('Going back', raw); }
+      if (/^(pause|stop|pause (the )?music|stop (the )?music)$/.test(t)) { await call('POST', '/pause'); setPlaying(false); return reply('Paused', raw); }
+      if (/^(play|resume|resume (the )?music|play (the )?music|unpause|keep playing)$/.test(t)) { await call('POST', '/play'); setPlaying(true); return reply('Playing', raw); }
+      if (/^(i )?(like|like (this|this song|it)|thumbs up)$/.test(t)) { await call('POST', '/like'); setTimeout(refreshExtras, 600); return reply('Liked', raw); }
+      if (/^unmute( (the )?music)?$/.test(t)) { const v = await setMusicMuted(false); return reply(`Unmuted, volume ${v}`, raw); }
+      if (/^(mute|mute (the )?music)$/.test(t)) { await setMusicMuted(true); return reply('Muted', raw); }
+      if (/^(volume up|louder|turn it up|turn (the )?(music|volume) up)$/.test(t)) { const v = Math.min(100, (state.volume || 50) + 10); await call('POST', '/volume', { volume: v }); return reply(`Volume ${v}`, raw); }
+      if (/^(volume down|quieter|softer|turn it down|turn (the )?(music|volume) down)$/.test(t)) { const v = Math.max(0, (state.volume || 50) - 10); await call('POST', '/volume', { volume: v }); return reply(`Volume ${v}`, raw); }
+      if (/volume/.test(t)) { const v = spokenNumber(t); if (v !== null) { await call('POST', '/volume', { volume: v }); return reply(`Volume ${v}`, raw); } }
+      if (/^(what('s| is) (playing|this( song)?)|what song is this|who is (this|singing))$/.test(t)) {
+        const s = state.song; return reply(s && s.title ? `${s.title} by ${s.artist || 'unknown artist'}` : 'Nothing is playing', raw);
+      }
+      if (/weather|forecast|temperature|how (cold|hot|warm) is it|(going to|gonna|will it) rain/.test(t)) {
+        try { return reply(await weatherReply(t), raw); } catch { return reply("I couldn't get the weather right now", raw); }
+      }
+      if (/^(cancel|clear|stop|end) (the )?(route|navigation|destination)$/.test(t)) {
+        const r = await mapRequest({ navVoiceCmd: 'clearDest' }, 'cleared');
+        return reply(r && r.ok ? 'Route cleared' : "I couldn't reach TruckNav", raw);
+      }
+      if ((m = t.match(/^(?:navigate to|take me to|drive to|go to|set (?:the )?destination (?:to|for)|route to|directions to|head to)\s+(.+)$/))) {
+        if (currentPane() !== 'map') setPane('map');
+        const r = await mapRequest({ navVoiceCmd: 'dest', city: m[1] }, 'dest');
+        if (!r) return reply("I couldn't reach TruckNav. Is the map open?", raw);
+        return reply(r.ok ? `Routing to ${r.name}` : `I couldn't find ${m[1]} on the map`, raw);
+      }
+      if ((m = t.match(/^(?:play|put on|listen to)\s+(?:some\s+)?(.+?)(?:\s+on (?:youtube )?music)?$/))) {
+        const ok = await playSearch(m[1]);
+        return reply(ok ? `Playing ${m[1]}` : `I couldn't find ${m[1]}`, raw);
+      }
+      reply('Try "play" a song, "skip", "what is the weather", or "navigate to Denver"', raw);
+    } catch (e) {
+      reply(e.message === 'unauthorized' ? 'Pear Desktop needs reconnecting' : 'Something went wrong', raw);
+    }
+  }
+
+  async function listen() {
+    if (asstBusy) return;
+    if (!host) { toast('Set your PC address in Settings first'); return; }
+    asstBusy = true; $('mic').classList.add('busy');
+    asstShow('listening', 'Listening… speak into your PC mic', '');
+    try {
+      const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 15000);
+      const r = await fetch(`${HELPER()}/listen`, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(to);
+      const d = await r.json();
+      if (!d.ok) { reply(d.error === 'nothing heard' ? "I didn't hear anything" : 'The PC microphone isn\'t available'); }
+      else await runCommand(d.text);
+    } catch {
+      asstShow('', 'Can\'t reach the PC helper. Type a command instead.', '');
+      asstLater(9000);
+    }
+    asstBusy = false; $('mic').classList.remove('busy');
+  }
+  $('mic').onclick = () => { if (!micHeld) { if (micMuted) setMicMuted(false); else listen(); } micHeld = false; };
+  $('asst-again').onclick = () => { if (micMuted) setMicMuted(false); listen(); };
+  $('asst-close').onclick = asstHide;
+  $('asst-type').onsubmit = (e) => { e.preventDefault(); const v = $('asst-input').value; $('asst-input').value = ''; $('asst-input').blur(); runCommand(v); };
+  $('asst-input').onfocus = () => clearTimeout(asstTimer);
+
+
+  // ---- Wake word ("Hey Jarvis"), heard by the PC helper ----
+  let wakeOn = store.get('pd_wake') !== '0', wakeLast = null, wakeBusy = false, wakeSynced = false;
+  function showWake(ok) { $('mic').classList.toggle('wake', wakeOn && ok && store.get('pd_micmute') !== '1'); }
+  async function pollWake() {
+    if (!host || wakeBusy) return;
+    wakeBusy = true;
+    try {
+      const want = wakeSynced ? '' : `?on=${wakeOn ? 1 : 0}`;
+      const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 2500);
+      const d = await (await fetch(`${HELPER()}/wake${want}`, { signal: ctrl.signal, cache: 'no-store' })).json();
+      clearTimeout(to);
+      wakeSynced = true; showWake(d.ok);
+      if (wakeLast === null) { wakeLast = d.id; return; }
+      if (d.id !== wakeLast) {
+        wakeLast = d.id;
+        if (!wakeOn || asstBusy || micMuted) return;
+        idleSince = performance.now();
+        if (d.state === 'listening') { $('mic').classList.add('busy'); asstShow('listening', 'Listening…', ''); asstLater(9000); }
+        else if (d.state === 'heard' && d.text) { $('mic').classList.remove('busy'); await runCommand(d.text); }
+        else if (d.state === 'timeout') { $('mic').classList.remove('busy'); reply("I didn't hear anything"); }
+      }
+    } catch { showWake(false); wakeSynced = false; }
+    finally { wakeBusy = false; }
+  }
+  setInterval(pollWake, 500);
+  // Hold the mic button to turn the wake word on or off
+  let micHold = null, micHeld = false;
+  $('mic').addEventListener('pointerdown', () => { micHeld = false; micHold = setTimeout(() => {
+    micHeld = true; wakeOn = !wakeOn; store.set('pd_wake', wakeOn ? '1' : '0'); wakeSynced = false;
+    toast(wakeOn ? 'Wake word on: say "Hey Jarvis"' : 'Wake word off', 3000); pollWake();
+  }, 700); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('mic').addEventListener(ev, () => clearTimeout(micHold)));
+
+
+  // ---- Mute buttons ----
+  ['np-mute', 'pv-mute'].forEach(id => $(id).onclick = (e) => {
+    e.stopPropagation();
+    const muting = state.volume > 0;
+    setMusicMuted(muting).then(v => toast(muting ? 'Music muted' : `Music unmuted · ${v}%`)).catch(() => {});
+  });
+  // Microphone mute: the PC stops listening completely (no wake word, no mic button) until unmuted
+  let micMuted = store.get('pd_micmute') === '1', micSynced = false;
+  const MIC_ON = 'M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z';
+  const MIC_OFF = 'M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5a3 3 0 0 0-6 0v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52a5.3 5.3 0 0 1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28a6.92 6.92 0 0 0 2.54-.9L19.73 21 21 19.73 4.27 3z';
+  function showMicMute() {
+    $('map-mic').classList.toggle('muted', micMuted);
+    $('map-mic-path').setAttribute('d', micMuted ? MIC_OFF : MIC_ON);
+    $('map-mic').setAttribute('aria-label', micMuted ? 'Unmute the microphone' : 'Mute the microphone');
+    $('mic').classList.toggle('muted', micMuted);
+    $('mic').querySelector('path').setAttribute('d', micMuted ? MIC_OFF : MIC_ON);
+  }
+  async function syncMicMute() {
+    if (!host) return;
+    try { await fetch(`${HELPER()}/mic?mute=${micMuted ? 1 : 0}`, { cache: 'no-store' }); micSynced = true; } catch { micSynced = false; }
+  }
+  function setMicMuted(m) {
+    micMuted = m; store.set('pd_micmute', m ? '1' : '0'); showMicMute(); syncMicMute(); showWake(!m);
+    if (m) asstHide();
+    toast(m ? 'Microphone muted' : 'Microphone on', 2500);
+  }
+  $('map-mic').onclick = () => setMicMuted(!micMuted);
+  setInterval(() => { if (!micSynced) syncMicMute(); }, 5000);
+  showMicMute(); syncMicMute();
+
+  // ---- Boot ----
+  updateClock(); setInterval(updateClock, 10000);
+  setInterval(() => { if (token && ws && ws.readyState === 1) refreshExtras(); }, 30000);
+  requestAnimationFrame(tick);
+  wake();
+  // One-time: the embedded map works now that WebView is current, so turn off
+  // the old "open the map as its own page" workaround.
+  if (!store.get('pd_v6')) { store.del('pd_mapfull'); store.set('pd_v6', '1'); }
+  renderChips();
+  pollOutput();
+  const lastView = store.get('pd_view');
+  setPane(store.get('pd_pane') === 'web' ? 'web' : 'map');
+  setView(lastView === 'player' || (lastView === 'map' && (!mapFull() || currentPane() === 'web')) ? lastView : 'dash');
+  if (host && token) connectWS(); else showSetup('');
+})();
+</script>
+</body>
+</html>
