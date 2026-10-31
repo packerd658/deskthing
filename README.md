@@ -2,7 +2,7 @@
 
 A CarPlay-style desk controller for **YouTube Music**, built for an old Android phone (made on a Pixel 4 XL) running in kiosk mode. It controls **Pear Desktop** (formerly YouTube Music Desktop) on your PC and shows an **American Truck Simulator** map from **TruckNav** with spoken turn-by-turn directions. It also has a voice assistant you talk to through your PC microphone: "Hey Jarvis".
 
-![Apps screen](screenshots/apps.png)
+![Dashboard](screenshots/dashboard.png)
 
 ## Features
 
@@ -18,8 +18,18 @@ A CarPlay-style desk controller for **YouTube Music**, built for an old Android 
 - **Microphone mute** button so the PC stops listening completely
 - **Apps screen**, themes, clock screen, and the current Windows audio output shown on the player
 
-![Dashboard](screenshots/dashboard.png)
-![Assistant](screenshots/assistant.png)
+## Screenshots
+
+*Shown at the Pixel 4 XL's screen size with demo music and a demo map.*
+
+| | |
+| --- | --- |
+| ![Now playing](screenshots/player.png) **Now playing** | ![Apps screen](screenshots/apps.png) **Apps screen** |
+| ![ATS map](screenshots/map.png) **Full-screen ATS map** | ![Clock](screenshots/clock.png) **Clock screen** |
+| ![Hey Jarvis](screenshots/hey-jarvis.png) **"Hey Jarvis"** | ![Weather](screenshots/jarvis-weather.png) **"What's the weather"** |
+| ![Navigate](screenshots/jarvis-navigate.png) **"Navigate to Denver"** | ![Settings](screenshots/settings.png) **Settings and themes** |
+| ![Sunset theme](screenshots/theme-sunset.png) **Sunset theme** | ![Paper theme](screenshots/theme-paper.png) **Paper theme** |
+| ![Ocean theme](screenshots/theme-ocean.png) **Ocean theme** | |
 
 ## What you need
 
