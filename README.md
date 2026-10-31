@@ -15,6 +15,7 @@ A CarPlay-style desk controller for **YouTube Music**, built for an old Android 
   - play anything: "play Tennessee Whiskey"
   - set a TruckNav destination: "navigate to Denver", "take me to Springfield Illinois", "cancel route"
   - get the weather: "what's the weather", "is it going to rain tomorrow"
+  - ask anything else, answered by your own local AI with **Ollama** (optional, see [OLLAMA.md](OLLAMA.md))
 - **Microphone mute** button so the PC stops listening completely
 - **Apps screen**, themes, clock screen, and the current Windows audio output shown on the player
 
@@ -29,7 +30,7 @@ A CarPlay-style desk controller for **YouTube Music**, built for an old Android 
 | ![Hey Jarvis](screenshots/hey-jarvis.png) **"Hey Jarvis"** | ![Weather](screenshots/jarvis-weather.png) **"What's the weather"** |
 | ![Navigate](screenshots/jarvis-navigate.png) **"Navigate to Denver"** | ![Settings](screenshots/settings.png) **Settings and themes** |
 | ![Sunset theme](screenshots/theme-sunset.png) **Sunset theme** | ![Paper theme](screenshots/theme-paper.png) **Paper theme** |
-| ![Ocean theme](screenshots/theme-ocean.png) **Ocean theme** | |
+| ![Ocean theme](screenshots/theme-ocean.png) **Ocean theme** | ![Ollama](screenshots/jarvis-ollama.png) **Asking Ollama** |
 
 ## What you need
 
@@ -65,6 +66,10 @@ If Windows Firewall asks about PowerShell, allow it on private networks. The pho
 | `voice-sample.bat` | Lists your Windows voices and plays a sample of the one being used |
 | `push-deskthing.bat` | Sends `pear-deskthing.html` to the phone |
 | `install-assistant.bat` | Does all of the above in one go |
+
+## Optional: Ollama
+
+To let Jarvis answer general questions with a local AI model on your network, follow **[OLLAMA.md](OLLAMA.md)**.
 
 ## Choosing the voice
 

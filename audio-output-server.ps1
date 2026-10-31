@@ -282,6 +282,10 @@ function Initialize-Recognizer {
       $wb.Append($pair[1])
       $g = New-Object System.Speech.Recognition.Grammar $wb; $g.Name = 'wake-' + $pair[0]; $r.LoadGrammar($g)
     }
+    # wake word + any question (sent to Ollama by the Desk Thing), lower priority than real commands
+    $ab = New-Object System.Speech.Recognition.GrammarBuilder $wakeChoices
+    $ab.AppendDictation()
+    $g = New-Object System.Speech.Recognition.Grammar $ab; $g.Name = 'wake-ask'; $g.Weight = 0.5; $r.LoadGrammar($g)
     # plain commands (mic button), off until /listen asks
     foreach ($pair in (New-CommandBuilders $cities)) {
       $g = New-Object System.Speech.Recognition.Grammar $pair[1]; $g.Name = $pair[0]; $g.Enabled = $false; $r.LoadGrammar($g); $script:plain += $g
@@ -436,7 +440,7 @@ while ($true) {
       $bytes = [byte[]]@()
     } elseif ($target -like '/speak*') {
       $text = Get-QueryValue $target 'text'
-      if ($text.Length -gt 300) { $text = $text.Substring(0, 300) }
+      if ($text.Length -gt 700) { $text = $text.Substring(0, 700) }
       if (-not $text) { $text = ' ' }
       $bytes = Get-SpeechWav $text
       $ctype = 'audio/wav'

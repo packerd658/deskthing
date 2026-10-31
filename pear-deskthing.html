@@ -250,6 +250,7 @@
   #asst-text { flex: 1; min-width: 0; }
   #asst-heard { font-size: 13px; color: #c4b5fd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 16px; }
   #asst-reply { font-size: 20px; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #asst-reply.long { white-space: normal; font-size: 16px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
   #asst-type { display: flex; gap: 8px; margin-top: 8px; }
   #asst-type input { flex: 1; min-width: 0; height: 40px; font-size: 16px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); color: #fff; }
   #asst-type button, #asst-close, #asst-again { flex: none; height: 40px; padding: 0 14px; border-radius: 12px; background: rgba(255,255,255,.12); color: #fff; font-weight: 600; font-size: 14px; }
@@ -703,6 +704,13 @@
       <label style="flex-direction:row;align-items:center;gap:12px;font-size:16px;color:var(--fg)">
         <input id="in-mapfull" type="checkbox" style="width:26px;height:26px;flex:none;accent-color:var(--accent)">
         Open the map as its own page (use this if the map stays blank or never asks for the code). Swipe back or press Back to return to music.
+      </label>
+      <h4>Jarvis + Ollama (optional)</h4>
+      <label>Ollama address: questions Jarvis doesn't know go here (for example: 192.168.1.60)
+        <input id="in-ollama" inputmode="url" autocomplete="off" placeholder="Leave blank to turn off">
+      </label>
+      <label>Ollama model (leave blank to use the first one installed)
+        <input id="in-ollama-model" autocomplete="off" placeholder="qwen2.5:1.5b">
       </label>
       <h4>Weather</h4>
       <label>City for "Hey Jarvis, what's the weather" (for example: Springfield, IL)
@@ -1239,12 +1247,20 @@
     $('theme-sec').style.display = token ? 'flex' : 'none';
     renderThemes();
     $('in-wx').value = store.get('pd_wxname') || '';
+    $('in-ollama').value = store.get('pd_ollama') || '';
+    $('in-ollama-model').value = store.get('pd_ollama_model') || '';
     $('setup').classList.add('show');
   }
   function hideSetup() { $('setup').classList.remove('show'); }
 
   $('gear').onclick = () => showSetup('');
+  function saveOllamaSetting() {
+    const a = $('in-ollama').value.trim(), m = $('in-ollama-model').value.trim();
+    if (a) store.set('pd_ollama', a); else store.del('pd_ollama');
+    if (m) store.set('pd_ollama_model', m); else store.del('pd_ollama_model');
+  }
   function saveWeatherSetting() {
+    saveOllamaSetting();
     const v = $('in-wx').value.trim();
     if (v !== (store.get('pd_wxname') || '')) { if (v) store.set('pd_wxname', v); else store.del('pd_wxname'); store.del('pd_wx'); WX = null; }
   }
@@ -1526,7 +1542,7 @@
     if (!host || !text) return;
     try { const a = new Audio(`${HELPER()}/speak?text=${encodeURIComponent(text)}`); a.play().catch(() => {}); } catch {}
   }
-  function reply(text, heard) { asstShow('', text, heard); say(text); asstLater(); }
+  function reply(text, heard) { asstShow('', text, heard); $('asst-reply').classList.toggle('long', String(text).length > 60); say(text); asstLater(Math.min(30000, 6000 + String(text).length * 70)); }
 
   // Find the first song in Pear Desktop's search results
   function firstVideoId(obj) {
@@ -1608,6 +1624,39 @@
     return s + '.';
   }
 
+  // ---- Ollama: anything Jarvis doesn't know goes to your own Ollama server ----
+  // Settings: pd_ollama = address (e.g. 192.168.1.60 or 192.168.1.60:11434), pd_ollama_model = model ("" = first installed)
+  const ollamaBase = () => { let a = (store.get('pd_ollama') || '').trim().replace(/\/+$/, ''); if (!/^https?:\/\//.test(a)) a = 'http://' + a; if (!/:\d+$/.test(a)) a += ':11434'; return a; };
+  let ollamaChat = [];   // short memory so follow-up questions make sense
+  async function ollamaModel() {
+    const m = (store.get('pd_ollama_model') || '').trim();
+    if (m) return m;
+    const tags = await (await fetch(`${ollamaBase()}/api/tags`, { cache: 'no-store' })).json();
+    const list = (tags.models || []).map(x => x.name).filter(n => !/embed/i.test(n));
+    if (!list.length) throw new Error('no models');
+    return list[0];
+  }
+  async function askOllama(q) {
+    const model = await ollamaModel();
+    const now = new Date().toLocaleString([], { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    ollamaChat.push({ role: 'user', content: q });
+    ollamaChat = ollamaChat.slice(-6);
+    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 90000);
+    let r;
+    try {
+      r = await fetch(`${ollamaBase()}/api/chat`, { method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        model, stream: false, keep_alive: '30m',
+        options: { num_predict: 160, temperature: 0.6 },
+        messages: [{ role: 'system', content: `You are Jarvis, a friendly voice assistant on a desk dashboard. Your answer is read aloud, so reply in one to three short sentences of plain spoken English: no lists, markdown, emoji or links. It is ${now}.` }, ...ollamaChat] }) });
+    } catch (e) { throw new Error(ctrl.signal.aborted ? 'timeout' : 'unreachable'); }
+    finally { clearTimeout(to); }
+    if (!r.ok) throw new Error('http ' + r.status);
+    const d = await r.json();
+    const text = String((d.message && d.message.content) || '').replace(/<think>[\s\S]*?<\/think>/g, '').replace(/[*_#`>]/g, '').replace(/\s+/g, ' ').trim() || "I don't have an answer for that.";
+    ollamaChat.push({ role: 'assistant', content: text });
+    return text;
+  }
+
   function spokenNumber(t) {
     const m = t.match(/(\d{1,3})/); if (m) return Math.min(100, +m[1]);
     const w = t.replace(/percent|per cent/g, '').replace(/^.*?(volume( to)?|to)\s+/, '').trim();
@@ -1617,7 +1666,7 @@
   async function runCommand(raw) {
     const t = String(raw || '').toLowerCase().replace(/[.,!?]/g, '').replace(/\s+/g, ' ').trim();
     if (!t) { reply("I didn't catch that"); return; }
-    asstShow('thinking', 'Working on it…', raw);
+    asstShow('thinking', 'Working on it…', raw); $('asst-reply').classList.remove('long');
     try {
       let m;
       if (/^(next|skip|next song|skip (this )?song|play next( song)?)$/.test(t)) { await call('POST', '/next'); return reply('Skipping', raw); }
@@ -1649,6 +1698,11 @@
       if ((m = t.match(/^(?:play|put on|listen to)\s+(?:some\s+)?(.+?)(?:\s+on (?:youtube )?music)?$/))) {
         const ok = await playSearch(m[1]);
         return reply(ok ? `Playing ${m[1]}` : `I couldn't find ${m[1]}`, raw);
+      }
+      if (store.get('pd_ollama')) {
+        asstShow('thinking', 'Thinking…', raw);
+        try { return reply(await askOllama(raw), raw); }
+        catch (e) { return reply(e.message === 'timeout' ? 'Ollama took too long to answer' : "I couldn't reach Ollama. Is the laptop on?", raw); }
       }
       reply('Try "play" a song, "skip", "what is the weather", or "navigate to Denver"', raw);
     } catch (e) {
