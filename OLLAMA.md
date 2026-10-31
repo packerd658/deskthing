@@ -15,6 +15,25 @@ Everything stays on your home network. Nothing goes to the cloud.
 - A computer on the same Wi-Fi/network running **[Ollama](https://ollama.com)**. An old laptop works; it doesn't need a graphics card.
 - At least one model pulled on it.
 
+## Quick setup over SSH (Linux Ollama computer)
+
+If Ollama runs on a Linux computer (for example Ubuntu Server on an old laptop), the files in the [`ollama-setup`](ollama-setup) folder do steps 2 and 5 for you from your Windows PC:
+
+1. Download the repo and open the `ollama-setup` folder.
+2. Double-click **`ollama-remote-setup.bat`**.
+3. Enter the Ollama computer's **address** and your **username** on it.
+4. Type that computer's password when asked: once to log in, once for `sudo`.
+
+It makes Ollama reachable by the Desk Thing, opens the firewall port, keeps a laptop on with the lid closed, then shows the installed models and saves everything to `ollama-setup-log.txt`. You can read exactly what it changes in [`ollama-setup.sh`](ollama-setup/ollama-setup.sh).
+
+From a Mac or Linux computer, run this instead (replace the username and address):
+
+```bash
+scp ollama-setup.sh you@192.168.1.60:/tmp/ && ssh -t you@192.168.1.60 "sudo bash /tmp/ollama-setup.sh"
+```
+
+Then skip to step 6 below. To do it by hand instead, follow the steps.
+
 ## 1. Pick a model
 
 Small models answer fastest on older hardware. On a laptop without a usable GPU (CPU only):
