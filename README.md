@@ -63,3 +63,7 @@ The helper uses the best natural US English voice it finds (Ava, Jenny, Aria, Em
 ## Privacy
 
 Speech recognition and the voice both run on your PC using Windows' built-in speech features. Nothing is recorded or sent anywhere. Weather comes from [Open-Meteo](https://open-meteo.com/) (no account or key).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
